@@ -1,0 +1,43 @@
+{
+  "name": "trackfast",
+  "version": "1.0.0",
+  "description": "TrackFast Logistics",
+  "keywords": [
+    "Logistics",
+    "TrackFast"
+  ],
+  "homepage": "https://github.com/Solomon-David/trackfast#readme",
+  "bugs": {
+    "url": "https://github.com/Solomon-David/trackfast/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Solomon-David/trackfast.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodemon index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nanoid": "^5.1.6",
+    "nodemailer": "^7.0.11",
+    "twilio": "^5.10.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
