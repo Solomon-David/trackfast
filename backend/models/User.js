@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -21,7 +22,7 @@ const userSchema = new mongoose.Schema(
     },
 
     //For verification
-    verified: {
+    isVerified: {
       type: Boolean,
       default: false,
     },
@@ -31,7 +32,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    verificationExpires: {
+    verificationCodeExpires: {
       type: Date,
       default: null,
     },
@@ -39,5 +40,7 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+
 
 export default mongoose.model("User", userSchema);

@@ -1,10 +1,10 @@
 // controllers/UserController.js
 
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { generateUserToken, generateStaffToken } from "../utils/generateTokens.js";
 import sendEmail from "../utils/sendEmail.js";
+import { hashPassword, comparePassword } from "../utils/hashPassword.js";
 
 // ===========================
 // Register User (Customer)
@@ -24,23 +24,27 @@ export const register = async (req, res) => {
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
+    const hashedPassword = await hashPassword(password);
+
     const newUser = await User.create({
       fullName,
       email,
       phone,
-      password,
+      password: hashedPassword,
       role: "customer",
       subRole: null,
       isVerified: false,
       verificationCode,
-      verificationCodeExpires: Date.now() + 10 * 60 * 1000
+      verificationCodeExpires: Date.now() + (10 * 60 * 1000)
     });
 
     // Send verification email
     await sendEmail({
       to: email,
       subject: "Verify your Track Fast Account",
-      html: `<p>Your verification code is <b>${verificationCode}</b></p>`
+      html: `<h2>Welcome to Trackfast Logistics</h2>
+            <p>Your partner in efficient delivery solutions.</p><br>
+            <p>Your verification code is <b>${verificationCode}</b> and expires in 10 minutes.</p>`
     });
 
     return res.status(201).json({
@@ -57,30 +61,44 @@ export const register = async (req, res) => {
 // ===========================
 // Verify Email
 // ===========================
-export const verifyEmail = async (req, res) => {
+export const verifyAccount = async (req, res) => {
   try {
-    const { email, verificationCode } = req.body;
+    const { email, code } = req.body;
 
     const user = await User.findOne({ email });
-
+    
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.isVerified)
       return res.status(400).json({ message: "Account already verified." });
 
     if (
-      user.verificationCode !== verificationCode ||
+      user.verificationCode !== code ||
       user.verificationCodeExpires < Date.now()
     ) {
       return res.status(400).json({ message: "Invalid or expired verification code." });
     }
 
     user.isVerified = true;
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
+    user.verificationCode = null;
+    user.verificationCodeExpires = null;
     await user.save();
 
-    return res.json({ message: "Email verified successfully." });
+        // AUTO LOGIN
+    const token = generateUserToken(user._id);
+
+    return res.status(200).json({
+      message: "Account verified successfully.",
+      user: {
+        id: user._id,
+        fullName: user.name,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+      token,
+    });
+
 
   } catch (error) {
     console.error("Verify Email Error:", error);
@@ -102,7 +120,7 @@ export const login = async (req, res) => {
     if (!user.isVerified)
       return res.status(403).json({ message: "Account not verified." });
 
-    const match = await bcrypt.compare(password, user.password);
+    const match = await comparePassword(password, user.password);
     if (!match)
       return res.status(400).json({ message: "Invalid credentials." });
 
@@ -140,7 +158,7 @@ export const staffLogin = async (req, res) => {
     if (staff.role === "customer")
       return res.status(403).json({ message: "Access denied." });
 
-    const match = await bcrypt.compare(password, staff.password);
+    const match = await comparePassword(password, staff.password);
     if (!match)
       return res.status(400).json({ message: "Invalid credentials." });
 
@@ -210,7 +228,7 @@ export const resetPassword = async (req, res) => {
     if (user.resetTokenExpires < Date.now())
       return res.status(400).json({ message: "Token expired." });
 
-    user.password = newPassword;
+    user.password = await hashPassword(newPassword);
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
 

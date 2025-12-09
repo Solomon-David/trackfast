@@ -1,0 +1,62 @@
+<template>
+  <v-container class="fill-height" fluid>
+    <v-row align="center" justify="center">
+      <v-col cols="12" md="4">
+        <v-card>
+          <v-card-title>Register</v-card-title>
+          <v-card-text>
+            <v-form ref="form">
+              <v-text-field v-model="fullName" label="Full Name" required></v-text-field>
+              <v-text-field v-model="email" label="Email" required></v-text-field>
+              <v-text-field v-model="phone" label="Phone" required></v-text-field>
+              <v-text-field
+                v-model="password"
+                label="Password"
+                type="password"
+                required
+              ></v-text-field>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="primary" :loading="loading" @click="handleRegister"
+              >Register</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { useUserStore } from "@/stores/userStore";
+import { useRouter } from "vue-router";
+
+const userStore = useUserStore();
+const router = useRouter();
+
+const fullName = ref("");
+const email = ref("");
+const phone = ref("");
+const password = ref("");
+const loading = ref(false);
+
+const handleRegister = async () => {
+  loading.value = true;
+  try {
+    await userStore.register({
+      fullName: fullName.value,
+      email: email.value,
+      phone: phone.value,
+      password: password.value,
+    });
+    router.push({ path: "/auth/verify-account", query: { email: email.value } });
+  } catch (err) {
+    console.error(err);
+    alert("Registration failed: " + err.response?.data?.message || err.message);
+  } finally {
+    loading.value = false;
+  }
+};
+</script>

@@ -9,6 +9,8 @@ const router = express.Router();
 // ==========================
 router.post("/login", UserController.login);
 router.post("/register", UserController.register);
+router.post("/verify-account", UserController.verifyAccount);
+
 
 // Optional: logout route
 router.post("/logout", protect, UserController.logout);
