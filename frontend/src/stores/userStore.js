@@ -3,38 +3,72 @@ import { ref, computed } from 'vue'
 import axios from '@/utils/axiosInstance'
 
 export const useUserStore = defineStore('userStore', () => {
-  const user = ref(JSON.parse(localStorage.getItem('user')) || null)
-  const token = ref(localStorage.getItem('token') || null)
+  // ---------------------------
+  // SAFE LOADER FOR LOCALSTORAGE
+  // ---------------------------
+  function safeLoad(key, json = true) {
+    const raw = localStorage.getItem(key)
+
+    // handle empty or invalid stored values
+    if (!raw || raw === 'undefined' || raw === 'null') {
+      return null
+    }
+
+    if (!json) return raw
+
+    try {
+      return JSON.parse(raw)
+    } catch (e) {
+      console.warn(`Invalid JSON removed from ${key}:`, raw)
+      localStorage.removeItem(key)
+      return null
+    }
+  }
+
+  // ---------------------------
+  // STATE
+  // ---------------------------
+  const user = ref(safeLoad('user'))
+  const token = ref(safeLoad('token', false))
   const loading = ref(false)
 
   const isLoggedIn = computed(() => !!token.value)
 
+  // ---------------------------
+  // SAVE TO STORAGE
+  // ---------------------------
   const saveToStorage = () => {
     localStorage.setItem('user', JSON.stringify(user.value))
-    localStorage.setItem('token', token.value)
+    localStorage.setItem('token', token.value || '')
   }
 
+  // ---------------------------
+  // VERIFY ACCOUNT
+  // ---------------------------
   const verifyAccount = async (email, code) => {
-  try {
-    const res = await axios.post("/auth/verify-account", { email, code });
-
-    return { success: true, message: res.data.message };
-  } catch (err) {
-    return {
-      success: false,
-      message: err.response?.data?.message || "Verification failed"
-    };
+    try {
+      const res = await axios.post('/auth/verify-account', { email, code })
+      return { success: true, message: res.data.message }
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Verification failed'
+      }
+    }
   }
-}
 
-  const loginByVerification = (theUser, theToken) =>{
-  user.value = theUser;
-  token.value = theToken;
-  saveToStorage()
+  // ---------------------------
+  // LOGIN AFTER VERIFICATION
+  // ---------------------------
+  const loginByVerification = (theUser, theToken) => {
+    user.value = theUser
+    token.value = theToken
+    saveToStorage()
+  }
 
-}
-
-
+  // ---------------------------
+  // LOGIN
+  // ---------------------------
   const login = async ({ email, password }) => {
     loading.value = true
     try {
@@ -51,6 +85,9 @@ export const useUserStore = defineStore('userStore', () => {
     }
   }
 
+  // ---------------------------
+  // REGISTER
+  // ---------------------------
   const register = async ({ fullName, email, password, phone }) => {
     loading.value = true
     try {
@@ -64,6 +101,9 @@ export const useUserStore = defineStore('userStore', () => {
     }
   }
 
+  // ---------------------------
+  // LOGOUT
+  // ---------------------------
   const logout = () => {
     user.value = null
     token.value = null
@@ -71,10 +111,24 @@ export const useUserStore = defineStore('userStore', () => {
     localStorage.removeItem('token')
   }
 
+  // ---------------------------
+  // LOAD AUTH ON APP START
+  // ---------------------------
   const loadUserFromStorage = () => {
-    user.value = JSON.parse(localStorage.getItem('user')) || null
-    token.value = localStorage.getItem('token') || null
+    user.value = safeLoad('user')
+    token.value = safeLoad('token', false)
   }
 
-  return { user, token, verifyAccount, loginByVerification, loading, isLoggedIn, login, register, logout, loadUserFromStorage }
+  return {
+    user,
+    token,
+    loading,
+    isLoggedIn,
+    verifyAccount,
+    loginByVerification,
+    login,
+    register,
+    logout,
+    loadUserFromStorage
+  }
 })
