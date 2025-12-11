@@ -27,18 +27,23 @@ export const trackPackage = async (req, res) => {
 // Add a new tracking event
 export const addTrackingEvent = async (req, res) => {
   try {
-    const { trackingNumber, status, location } = req.body;
-
+    const { trackingNumber, status, currentLocation } = req.body;
     const shipment = await Shipment.findOne({ trackingNumber });
-    if (!shipment) return res.status(404).json({ message: "Shipment not found" });
+    if (!shipment) {
+      console.log("no such shipment");
+       return res.status(404).json({ message: "Shipment not found" });
+      }
 
     const event = await TrackingEvent.create({
       shipment: shipment._id,
+      trackingNumber,
       status,
-      location,
+      location: currentLocation,
+      updatedBy: req.user.id,
       timestamp: new Date(),
     });
-
+    
+    shipment.currentLocation = currentLocation;
     shipment.status = status;
     await shipment.save();
 
@@ -46,11 +51,13 @@ export const addTrackingEvent = async (req, res) => {
     await emailQueue.add("sendEmail", {
       to: shipment.receiverEmail,
       subject: `Shipment Update: ${status}`,
-      text: `Your shipment #${trackingNumber} is now ${status}.`,
-      html: `<p>Your shipment <strong>#${trackingNumber}</strong> is now <strong>${status}</strong> at ${location}</p>`,
+      text: `Your shipment ${trackingNumber} is ${status}.`,
+      html: `<p>Your shipment <strong>#${trackingNumber}</strong> is now <strong>${status}</strong> at ${currentLocation}</p>`,
     });
 
-    res.json({ message: "Tracking event added", event });
+    await event.save();    
+    
+    res.json({ message: "Tracking event added", success: true});
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

@@ -13,13 +13,13 @@ const shipmentSchema = new mongoose.Schema(
     sender: {
       name: String,
       address: String,
-      phone: String,
+      email: String, // Phone numbers are typically stored as String
     },
 
     receiver: {
       name: String,
       address: String,
-      phone: String,
+      email: String, // Phone numbers are typically stored as String
     },
 
     package: {
@@ -46,6 +46,8 @@ const shipmentSchema = new mongoose.Schema(
     },
 
     currentLocation: { type: String, default: "Warehouse" },
+
+    cost: Number,
 
     price: Number,
   },

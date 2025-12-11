@@ -1,22 +1,73 @@
 import Transaction from "../models/Transaction.js";
+import Shipment from "../models/Shipment.js";
+import sendEmail from "../utils/sendEmail.js";
 
-// Create a transaction
+/**
+ * @desc    Create a transaction using tracking number + base64 receipt image
+ * @route   POST /api/transactions
+ * @access  Staff/Admin
+ */
 export const createTransaction = async (req, res) => {
   try {
-    const transaction = await Transaction.create(req.body);
-    res.status(201).json(transaction);
-  } catch (err) {
-    console.error(err);
+    const { trackingNumber, amount, customerEmail, receiptBase64 } = req.body;
+
+    if (!trackingNumber || !amount || !customerEmail || !receiptBase64) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+
+    // 1) Find shipment
+    const shipment = await Shipment.findOne({ trackingNumber });
+
+    if (!shipment) {
+      return res.status(404).json({ message: "Shipment not found." });
+    }
+
+    // 2) Create transaction document (store Base64 string)
+    const transaction = await Transaction.create({
+      amount,
+      customer: shipment.customer,
+      shipment: shipment._id,
+      receiptImage: receiptBase64,   // <--- stored directly
+    });
+
+    // 3) Send email with inline base64 image
+    await sendEmail({
+      to: customerEmail,
+      subject: "Your Shipment Receipt",
+      html: `
+        <p>Your receipt for shipment <strong>${trackingNumber}</strong> is below:</p>
+        <br/>
+        <img 
+          src="${receiptBase64}" 
+          alt="Receipt Image" 
+          style="max-width: 100%; border:1px solid #ccc; border-radius:8px;"
+        />
+      `,
+    });
+
+    res.status(201).json({
+      message: "Transaction created and emailed successfully.",
+      transaction,
+    });
+
+  } catch (error) {
+    console.error("Create Transaction Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get all transactions
+
+/**
+ * @desc    Get all transactions
+ * @route   GET /api/transactions
+ * @access  Admin/Staff
+ */
 export const getAllTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find()
       .populate("customer", "fullName email")
       .populate("shipment", "trackingNumber status");
+
     res.json(transactions);
   } catch (err) {
     console.error(err);
@@ -24,17 +75,18 @@ export const getAllTransactions = async (req, res) => {
   }
 };
 
+
 /**
- * @desc    Get all transactions belonging to the logged-in user
+ * @desc    Get logged-in user's transactions
  * @route   GET /api/transactions/my-transactions
- * @access  Protected (customers)
+ * @access  Customer
  */
 export const getMyTransactions = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const transactions = await Transaction.find({ user: userId })
-      .sort({ createdAt: -1 }); // newest first
+    const transactions = await Transaction.find({ customer: userId })
+      .sort({ createdAt: -1 });
 
     res.status(200).json(transactions);
   } catch (error) {
@@ -43,8 +95,9 @@ export const getMyTransactions = async (req, res) => {
   }
 };
 
+
 /**
- * @desc    Delete a transaction (admin only)
+ * @desc    Delete a transaction
  * @route   DELETE /api/transactions/:id
  * @access  Admin
  */
@@ -65,4 +118,3 @@ export const deleteTransaction = async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 };
-

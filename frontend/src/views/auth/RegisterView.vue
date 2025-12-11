@@ -3,7 +3,15 @@
     <v-row align="center" justify="center">
       <v-col cols="12" md="4">
         <v-card>
-          <v-card-title>Register</v-card-title>
+          <div class="d-flex flex-column align-center">
+            <v-img
+              src="/src/assets/logo.png"
+              width="80"
+              height="80"
+              class="rounded-circle mb-4"
+            ></v-img>
+            <v-card-title class="text-h5">Register</v-card-title>
+          </div>
           <v-card-text>
             <v-form ref="form">
               <v-text-field v-model="fullName" label="Full Name" required></v-text-field>
@@ -17,11 +25,14 @@
               ></v-text-field>
             </v-form>
           </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" :loading="loading" @click="handleRegister"
-              >Register</v-btn
-            >
-          </v-card-actions>
+          <v-btn
+            type="submit"
+            color="primary"
+            block
+            :loading="loading"
+            @click="handleRegister"
+            >Register</v-btn
+          >
         </v-card>
       </v-col>
     </v-row>

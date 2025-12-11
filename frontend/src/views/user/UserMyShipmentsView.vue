@@ -1,33 +1,73 @@
-
-
-// File path: /frontend/src/views/user/UserMyShipmentsView.vue
 <template>
-<v-container>
-<h1>My Shipments</h1>
-<v-data-table :headers="headers" :items="shipments" item-key="id">
-<template #item.status="{ item }">
-<v-chip :color="item.status === 'Delivered' ? 'green' : 'blue'" dark>
-{{ item.status }}
-</v-chip>
-</template>
-</v-data-table>
-</v-container>
-</template>
+  <v-container>
+    <div class="d-flex align-center justify-space-between">
+      <h1>My Shipments</h1>
 
+      <!-- NEW: Create Shipment Button (always visible) -->
+      <v-btn color="primary" @click="goCreate">
+        Create Shipment
+      </v-btn>
+    </div>
+
+    <div v-if="loading">
+      <v-row justify="center" class="my-6">
+        <v-progress-circular size="48" />
+      </v-row>
+    </div>
+
+    <div v-else-if="shipments.length == 0" class="my-6 text-center">
+      <EmptyState message="You have no shipments yet." />
+      <v-row justify="center" class="mt-4">
+        <v-btn color="primary" @click="goCreate">Create Shipment</v-btn>
+      </v-row>
+    </div>
+
+    <v-data-table
+      v-else
+      :headers="headers"
+      :items="shipments"
+      item-key="id"
+      class="mt-4"
+    >
+      <template #item.status="{ item }">
+        <v-chip :color="item.status === 'Delivered' ? 'green' : 'blue'" dark>
+          {{ item.status }}
+        </v-chip>
+      </template>
+    </v-data-table>
+  </v-container>
+</template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useShipmentStore } from "@/stores/shipmentStore";
+import EmptyState from "@/components/shared/EmptyState.vue";
 
+const shipmentStore = useShipmentStore();
+const router = useRouter();
 
 const headers = [
-{ text: 'Tracking Number', value: 'trackingNumber' },
-{ text: 'Destination', value: 'destination' },
-{ text: 'Status', value: 'status' },
+  { title: "Tracking Number", key: "trackingNumber" },
+  { title: "Description", key: "description" },
+  { title: "Status", key: "status" },
 ];
 
+const shipments = computed(() =>
+  shipmentStore.shipments.map((shipment) => ({
+    trackingNumber: shipment.trackingNumber,
+    description: shipment.package?.description || "N/A",
+    status: shipment.status,
+  }))
+);
 
-const shipments = ref([
-{ id: 1, trackingNumber: 'TF123456', destination: 'Lagos', status: 'In Transit' },
-{ id: 2, trackingNumber: 'TF123457', destination: 'Abuja', status: 'Delivered' },
-]);
+const loading = computed(() => shipmentStore.loading);
+
+const goCreate = () => {
+  router.push("/shipments/create");
+};
+
+onMounted(() => {
+  shipmentStore.getMyShipments();
+});
 </script>

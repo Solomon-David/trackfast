@@ -7,6 +7,25 @@ import sendEmail from "../utils/sendEmail.js";
 import { hashPassword, comparePassword } from "../utils/hashPassword.js";
 
 // ===========================
+// Contact us (Customer)
+// ===========================
+  export const contactUs = async (req,res) => {
+    try {
+      const { email, fullName, message} = req.body;
+      await sendEmail({
+      to: process.env.EMAIL_USER,
+      subject: "User contact",
+      html: `<h2>Message from ${fullName}</h2>
+            <h3>Email: ${email}</h3>
+            <p><b>Message</b>: ${message}</p>`
+    });
+    }catch(error){
+    console.error("Register Error:", error);
+    return res.status(500).json({ message: "Server error." });
+    }
+  }
+
+// ===========================
 // Register User (Customer)
 // ===========================
 export const register = async (req, res) => {
@@ -32,7 +51,7 @@ export const register = async (req, res) => {
       phone,
       password: hashedPassword,
       role: "customer",
-      subRole: null,
+      staffPosition: null,
       isVerified: false,
       verificationCode,
       verificationCodeExpires: Date.now() + (10 * 60 * 1000)
@@ -121,20 +140,20 @@ export const login = async (req, res) => {
       return res.status(403).json({ message: "Account not verified." });
 
     const match = await comparePassword(password, user.password);
-    if (!match)
+    if (!match){
       return res.status(400).json({ message: "Invalid credentials." });
-
+    }
     const token = generateUserToken(user);
-
+    const userData = {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role
+    };
     return res.json({
       message: "Login successful.",
       token,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role
-      }
+      user: userData
     });
 
   } catch (error) {

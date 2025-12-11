@@ -8,6 +8,11 @@ const trackingEventSchema = new mongoose.Schema(
       required: true,
     },
 
+    trackingNumber: {
+      type: String,
+      required: true,
+    },
+
     status: {
       type: String,
       enum: [

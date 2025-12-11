@@ -47,7 +47,8 @@ const router = createRouter({
         { path: '', component: HomeView },
         { path: 'about', component: AboutView },
         { path: 'contact', component: ContactView },
-        { path: 'track', component: TrackShipmentView }
+        { path: '/track/:trackingNumber', component: TrackShipmentView },
+        { path: '/track/', component: TrackShipmentView }
       ]
     },
 
@@ -62,10 +63,10 @@ const router = createRouter({
       component: MainLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: 'dashboard', component: UserDashboardView },
-        { path: 'profile', component: UserProfileView },
-        { path: 'shipments', component: UserMyShipmentsView },
-        { path: 'transactions', component: UserMyTransactionsView }
+        { path: 'dashboard', component: ()=> import('@/views/user/UserDashboardView.vue') },
+        { path: 'profile', component: ()=> import('@/views/user/UserProfileView.vue') },
+        { path: 'shipments', component: ()=> import('@/views/user/UserMyShipmentsView.vue') },
+        { path: 'transactions', component: ()=> import('@/views/user/UserMyTransactionsView.vue') }
       ]
     },
 
@@ -85,9 +86,10 @@ const router = createRouter({
       component: MainLayout,
       meta: { requiresAuth: true, staffOnly: true },
       children: [
-        { path: 'dashboard', component: StaffDashboardView },
-        { path: 'pickups', component: StaffPickupRequestsView },
-        { path: 'update-status', component: StaffUpdateShipmentStatusView }
+        { path: 'dashboard', component: ()=>import('@/views/staff/StaffDashboardView.vue') },
+        { path: 'pickups', component: ()=>import('@/views/staff/StaffPickupRequestsView.vue') },
+        { path: 'update-status', component: ()=>import('@/views/staff/StaffUpdateShipmentStatusView.vue') },
+        { path: 'create-transaction', component: () => import('@/views/staff/CreateTransactionView.vue')}
       ]
     },
 
@@ -97,10 +99,28 @@ const router = createRouter({
       component: MainLayout,
       meta: { requiresAuth: true, adminOnly: true },
       children: [
-        { path: 'dashboard', component: AdminDashboardView },
-        { path: 'users', component: AdminUsersView },
-        { path: 'create-staff', component: AdminCreateStaffView },
-        { path: 'activity', component: AdminStaffActivityLogsView }
+        {
+  path: 'dashboard',
+  component: () => import('@/views/admin/AdminDashboardView.vue')
+},
+{
+  path: 'users',
+  component: () => import('@/views/admin/AdminUsersView.vue')
+},
+{
+  path: 'create-staff',
+  component: () => import('@/views/admin/AdminCreateStaffView.vue')
+},
+{
+  path: 'activity',
+  component: () => import('@/views/admin/AdminStaffActivityLogsView.vue')
+},
+
+        {
+  path: "pricing-settings",
+  component: () => import("@/views/admin/PricingSettingsView.vue")
+}
+
       ]
     },
 

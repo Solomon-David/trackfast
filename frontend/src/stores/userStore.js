@@ -67,7 +67,7 @@ export const useUserStore = defineStore('userStore', () => {
   }
 
   // ---------------------------
-  // LOGIN
+  // LOGIN 
   // ---------------------------
   const login = async ({ email, password }) => {
     loading.value = true
@@ -117,6 +117,15 @@ export const useUserStore = defineStore('userStore', () => {
   const loadUserFromStorage = () => {
     user.value = safeLoad('user')
     token.value = safeLoad('token', false)
+  }
+
+  //Contact
+  const contactUs = async (fullName, email, message) => {
+    loadUserFromStorage();
+    const name = fullName || user.value.fullName;
+    const mail = email || user.value.email;
+    await axios.post('/user/contactUs', { fullName: name, mail:email, message});
+    return true;
   }
 
   return {

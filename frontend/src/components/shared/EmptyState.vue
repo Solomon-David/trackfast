@@ -7,12 +7,10 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
-
-const props = defineProps({
-  message: { type: String, default: 'No data available' }
-})
+import { defineProps } from "vue";
+defineProps({
+  message: { type: String, default: "No data available" },
+});
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

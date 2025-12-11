@@ -6,6 +6,12 @@
 </template>
 
 <script setup>
+import {ref, provide} from 'vue';
+  const drawer = ref(false);
+const toggleDrawer = () => (drawer.value = !drawer.value);
+
+provide("drawer", drawer);
+provide("toggleDrawer", toggleDrawer);
 </script>
 
 <style>

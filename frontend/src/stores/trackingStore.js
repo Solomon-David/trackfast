@@ -13,7 +13,7 @@ export const useTrackingStore = defineStore('trackingStore', () => {
       const res = await axios.get(`/tracking/${trackingNumber}`)
       trackingEvents.value = res.data
       return res.data
-    } catch (error) {
+    } catch (error) { 
       console.error('Error fetching tracking events:', error)
       throw error
     } finally {

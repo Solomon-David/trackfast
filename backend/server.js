@@ -12,6 +12,7 @@ import staffActivityRoutes from "./routes/staffActivity.routes.js";
 import trackingRoutes from "./routes/tracking.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import pricingRoutes from "./routes/pricingsetting.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +38,7 @@ app.use("/api/staff-activities", staffActivityRoutes);
 app.use("/api/tracking", trackingRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/pricing", pricingRoutes);
 
 // ==========================
 // Health Check Endpoint

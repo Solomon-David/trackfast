@@ -5,7 +5,6 @@ import { ref } from 'vue'
 
 export const useShipmentStore = defineStore('shipmentStore', () => {
   const shipments = ref([])
-  const currentShipment = ref(null)
   const loading = ref(false)
 
   const getMyShipments = async () => {
@@ -34,12 +33,11 @@ export const useShipmentStore = defineStore('shipmentStore', () => {
     }
   }
 
-  const getShipmentById = async (id) => {
+  const getShipmentByTrackingNumber = async (trackingNumber) => {
     loading.value = true
     try {
-      const res = await axios.get(`/shipments/details/${id}`)
-      currentShipment.value = res.data
-      return res.data
+      const res = await axios.post(`/shipments/details`,{trackingNumber});
+      return res.data;
     } catch (error) {
       console.error('Error fetching shipment details:', error)
       throw error
@@ -48,5 +46,18 @@ export const useShipmentStore = defineStore('shipmentStore', () => {
     }
   }
 
-  return { shipments, currentShipment, loading, getMyShipments, createShipment, getShipmentById }
+  const updateShipmentStatus = async (trackingNumber, status, currentLocation) => {
+    loading.value = true
+    try {
+      const res = await axios.post('/shipments/update-status', { trackingNumber, status, currentLocation })
+      return res.data
+    } catch (error) {
+      console.error('Error updating shipment status:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { shipments, loading, getMyShipments, getShipmentByTrackingNumber, createShipment, updateShipmentStatus }
 })

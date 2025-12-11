@@ -1,12 +1,20 @@
 // File path: /frontend/src/components/shared/Navbar.vue
 <template>
   <v-app-bar app elevation="2" class="px-4">
-    <v-app-bar-nav-icon v-if="isInsideLayout" @click="toggleDrawer" class="mr-2" />
+    <v-app-bar-nav-icon @click="toggleDrawer" v-if="isLoggedIn" />
+    <!-- Logo + Title -->
+    <v-btn variant="text" class="d-flex align-center" to="/">
+      <v-img
+        src="/src/assets/logo.png"
+        alt="TrackFast Logo"
+        width="32"
+        height="32"
+        class="me-2"
+        contain
+      ></v-img>
 
-    <v-toolbar-title class="font-weight-bold text-h5">
-      Track Fast Logistics
-    </v-toolbar-title>
-
+      <span class="text-h6 font-weight-bold">TrackFast Logistics</span>
+    </v-btn>
     <v-spacer></v-spacer>
 
     <div v-if="!isLoggedIn">
@@ -15,34 +23,28 @@
     </div>
 
     <div v-else class="d-flex align-center">
-      <v-btn v-if="!isInsideLayout" to="/user/dashboard" variant="text">Dashboard</v-btn>
+      <v-spacer class="pa-3"></v-spacer>
       <v-btn @click="logout" color="error" variant="flat">Logout</v-btn>
     </div>
   </v-app-bar>
 </template>
 
 <script setup>
-import { computed, defineProps } from 'vue'
-import { useUserStore } from '@/stores/userStore'
-import { useRouter } from 'vue-router'
+import { computed, defineProps, inject } from "vue";
+import { useUserStore } from "@/stores/userStore";
+import { useRouter } from "vue-router";
+import logo from "@/assets/logo.jpg";
 
-const props = defineProps({
-  isInsideLayout: { type: Boolean, default: false }
-})
+const toggleDrawer = inject("toggleDrawer");
 
-const userStore = useUserStore()
-const router = useRouter()
-const isLoggedIn = computed(() => userStore.isLoggedIn)
-
-const toggleDrawer = () => {
-  // Emit event to parent layout if needed
-}
+const userStore = useUserStore();
+const router = useRouter();
+const isLoggedIn = computed(() => userStore.isLoggedIn);
 
 const logout = () => {
-  userStore.logout()
-  router.push('/')
-}
+  userStore.logout();
+  router.push("/");
+};
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

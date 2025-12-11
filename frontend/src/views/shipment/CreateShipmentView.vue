@@ -1,29 +1,99 @@
-// File path: /frontend/src/views/shipment/CreateShipmentView.vue
-<template>
-<v-container>
-<h1>Create Shipment</h1>
-<v-form @submit.prevent="submitShipment">
-<v-text-field v-model="senderName" label="Sender Name" required />
-<v-text-field v-model="receiverName" label="Receiver Name" required />
-<v-text-field v-model="destination" label="Destination" required />
-<v-text-field v-model="weight" label="Weight (kg)" type="number" required />
-<v-text-field v-model="dimensions" label="Dimensions (LxWxH)" required />
-<v-btn type="submit" color="primary">Submit Shipment</v-btn>
-</v-form>
-</v-container>
-</template>
-
-
 <script setup>
-import { ref } from 'vue';
-const senderName = ref('');
-const receiverName = ref('');
-const destination = ref('');
-const weight = ref('');
-const dimensions = ref('');
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 
+import { useUserStore } from "@/stores/userStore";
+import { useShipmentStore } from "@/stores/shipmentStore";
+import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
+import { useShipmentCalculator } from "@/composables/useShipmentCalculator";
 
-const submitShipment = () => {
-console.log('New Shipment:', { senderName: senderName.value, receiverName: receiverName.value, destination: destination.value, weight: weight.value, dimensions: dimensions.value });
+// Stores
+const userStore = useUserStore();
+const shipmentStore = useShipmentStore();
+const pricingStore = usePricingSettingsStore();
+
+// Composable
+const { calculatedCost, calculateCost } = useShipmentCalculator();
+
+const router = useRouter();
+
+// Form fields
+const senderName = ref(userStore.user?.fullName || "");
+const senderEmail = ref(userStore.user?.email || "");
+const senderAddress = ref("");
+const senderCity = ref("");
+
+const receiverName = ref("");
+const receiverEmail = ref("");
+const receiverAddress = ref("");
+const receiverCity = ref("");
+
+const weight = ref("");
+const dimensionLength = ref("");
+const dimensionWidth = ref("");
+const dimensionHeight = ref("");
+const description = ref("");
+
+const dialog = ref(false);
+const submitting = ref(false);
+
+onMounted(async () => {
+  await pricingStore.fetchSettings();
+});
+
+// ======================================
+// OPEN QUOTE POPUP
+// ======================================
+const openQuoteDialog = async () => {
+  await calculateCost({
+    length: parseFloat(dimensionLength.value),
+    width: parseFloat(dimensionWidth.value),
+    height: parseFloat(dimensionHeight.value),
+    weight: parseFloat(weight.value),
+    senderCity: senderCity.value,
+    receiverCity: receiverCity.value,
+  });
+
+  dialog.value = true;
+};
+
+// ======================================
+// CONFIRM & CREATE SHIPMENT
+// ======================================
+const confirmCreate = async () => {
+  submitting.value = true;
+
+  const payload = {
+    senderName: senderName.value,
+    senderEmail: senderEmail.value,
+    senderAddress: `${senderAddress.value}, ${senderCity.value}`,
+
+    receiverName: receiverName.value,
+    receiverEmail: receiverEmail.value,
+    receiverAddress: `${receiverAddress.value}, ${receiverCity.value}`,
+
+    weight: parseFloat(weight.value),
+    dimensionLength: parseFloat(dimensionLength.value),
+    dimensionWidth: parseFloat(dimensionWidth.value),
+    dimensionHeight: parseFloat(dimensionHeight.value),
+
+    description: description.value,
+    cost: calculatedCost.value,
+  };
+
+  try {
+    const created = await shipmentStore.createShipment(payload);
+
+    if (created?.id) {
+      router.push(`/shipments/details/${created.id}`);
+    } else {
+      router.push("/user/shipments");
+    }
+  } catch (err) {
+    console.error("Error creating shipment:", err);
+  } finally {
+    submitting.value = false;
+    dialog.value = false;
+  }
 };
 </script>

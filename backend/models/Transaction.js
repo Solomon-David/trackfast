@@ -14,9 +14,14 @@ const transactionSchema = new mongoose.Schema(
     },
     amount: { type: Number, required: true },
     currency: { type: String, default: "USD" },
-    method: { type: String, enum: ["cash", "card", "bank_transfer"], required: true },
     status: { type: String, enum: ["pending", "completed", "failed"], default: "pending" },
+
+  receiptImage: {
+  type: String,   // base64 string
+  required: true,
+},
   },
+
   { timestamps: true }
 );
 
