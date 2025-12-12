@@ -59,5 +59,18 @@ export const useShipmentStore = defineStore('shipmentStore', () => {
     }
   }
 
-  return { shipments, loading, getMyShipments, getShipmentByTrackingNumber, createShipment, updateShipmentStatus }
+  const sendReceiptEmail = async (image, email, trackingNumber, message) => {
+    loading.value = true
+    try {
+      let result = await axios.post('/shipments/send-receipt', { image, email, trackingNumber, message });
+      return result.data;
+    } catch (error) {
+      console.error('Error sending receipt email:', error)
+      throw error
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { shipments, loading, getMyShipments, getShipmentByTrackingNumber, createShipment, updateShipmentStatus, sendReceiptEmail }
 })

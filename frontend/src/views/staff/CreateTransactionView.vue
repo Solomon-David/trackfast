@@ -68,7 +68,7 @@
 
       <div class="receipt-section">
         <h3 class="section-title">Cost</h3>
-        <p class="cost-amount">${{ shipment.cost?.toLocaleString() }}</p>
+        <p class="cost-amount">${{ shipment.cost?.toLocaleString(en_US) }}</p>
       </div>
 
       <!-- Footer message -->
@@ -86,6 +86,27 @@
     >
       Generate & Send Receipt
     </v-btn>
+
+    <!-- Action Buttons -->
+    <v-row class="mt-4" v-if="shipment">
+      <v-col cols="12" md="4">
+        <v-btn block color="primary" @click="downloadReceipt" :loading="downloading">
+          Download Receipt
+        </v-btn>
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <v-btn block color="success" @click="sendToSender" :loading="emailSending">
+          Email to Sender
+        </v-btn>
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <v-btn block color="info" @click="sendToReceiver" :loading="emailSending">
+          Email to Receiver
+        </v-btn>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -97,10 +118,9 @@ import { useShipmentStore } from "@/stores/shipmentStore";
 const trackingNumber = ref("");
 const shipment = ref(null);
 const loading = ref(false);
-const generating = ref(false);
-
+const downloading = ref(false);
+const emailSending = ref(false);
 const receiptCard = ref(null);
-const img = ref(null);
 
 const shipmentstore = useShipmentStore();
 
@@ -139,21 +159,81 @@ async function generateTransaction() {
     // 🟦 Show it in the <img>
     img.value.src = imageData;
 
-    // 🟦 This is the Base64 you will upload
-    console.log("BASE64 IMAGE:", imageData.substring(0, 100) + "...");
-
-    // Example POST:
-    // await axios.post("/transactions", {
-    //   shipmentId: shipment.value._id,
-    //   receiptImage: imageData
-    // });
-
     alert("Receipt generated successfully!");
   } catch (error) {
     console.error("Error generating receipt:", error);
     alert("Error generating receipt");
   } finally {
     generating.value = false;
+  }
+}
+
+async function downloadReceipt() {
+  if (!receiptCard.value) return;
+
+  downloading.value = true;
+
+  try {
+    const canvas = await html2canvas(receiptCard.value, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+    });
+
+    const imageData = canvas.toDataURL("image/png");
+
+    // Trigger browser download
+    const link = document.createElement("a");
+    link.href = imageData;
+    link.download = `receipt-${shipment.value.trackingNumber}.png`;
+    link.click();
+  } catch (err) {
+    console.error("Download error:", err);
+    alert("Failed to download receipt.");
+  } finally {
+    downloading.value = false;
+  }
+}
+
+async function sendToSender() {
+  let message = `Dear ${shipment.value.sender.name},\n\nPlease find attached the receipt for your shipment with tracking number ${shipment.value.trackingNumber}.
+  Your package will be delivered within 2 - 5 business days.\n\n
+  Thank you for choosing our services.\n\nBest regards,\nTrackFast Logistics`;
+  await sendReceiptEmail(shipment.value.sender.email, message);
+}
+
+async function sendToReceiver() {
+  let message = `Dear ${shipment.value.receiver.name},\n\n You are to receive a package with tracking number ${shipment.value.trackingNumber}.
+  Your package is due to be delivered within 2 - 5 business days.\n\n
+  \n\nThank you for choosing our services.\n\nBest regards,\nTrackFast Logistics`;
+  await sendReceiptEmail(shipment.value.receiver.email, message);
+}
+
+async function sendReceiptEmail(email, message) {
+  if (!receiptCard.value) return;
+
+  emailSending.value = true;
+
+  try {
+    const canvas = await html2canvas(receiptCard.value, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+    });
+
+    const imageData = canvas.toDataURL("image/png");
+
+    await shipmentstore.sendReceiptEmail(
+      imageData,
+      email,
+      shipment.value.trackingNumber,
+      message
+    );
+
+    alert(`Receipt sent to ${email}`);
+  } catch (err) {
+    console.error("Email error:", err);
+    alert("Failed to send receipt email.");
+  } finally {
+    emailSending.value = false;
   }
 }
 </script>

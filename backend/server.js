@@ -14,6 +14,9 @@ import transactionRoutes from "./routes/transaction.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import pricingRoutes from "./routes/pricingsetting.routes.js";
 
+//pricing model
+import Pricing from "./models/PricingSettings.js";
+
 // Load environment variables
 dotenv.config();
 
@@ -47,6 +50,8 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "API is running" });
 });
 
+
+
 // ==========================
 // Error handling middleware
 // ==========================
@@ -65,6 +70,27 @@ mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log("MongoDB connected successfully");
+
+// Ensure a pricing object always exists
+(async function ensurePricingExists() {
+  try {
+    const count = await Pricing.countDocuments();
+
+    if (count === 0) {
+      console.log("⚠️ No pricing document found. Creating default pricing...");
+
+      await Pricing.create({});
+
+      console.log("✅ Default pricing document created.");
+    } else {
+      console.log("✔ Pricing document already exists.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to ensure pricing exists:", err);
+  }
+})();
+
+
 
     // Start server
     app.listen(PORT, () => {

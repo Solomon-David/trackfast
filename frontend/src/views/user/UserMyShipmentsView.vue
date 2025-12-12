@@ -4,7 +4,7 @@
       <h1>My Shipments</h1>
 
       <!-- NEW: Create Shipment Button (always visible) -->
-      <v-btn color="primary" @click="goCreate">
+      <v-btn color="primary" @click="goCreate" v-if="!shipments.length == 0">
         Create Shipment
       </v-btn>
     </div>
@@ -22,13 +22,7 @@
       </v-row>
     </div>
 
-    <v-data-table
-      v-else
-      :headers="headers"
-      :items="shipments"
-      item-key="id"
-      class="mt-4"
-    >
+    <v-data-table v-else :headers="headers" :items="shipments" item-key="id" class="mt-4">
       <template #item.status="{ item }">
         <v-chip :color="item.status === 'Delivered' ? 'green' : 'blue'" dark>
           {{ item.status }}

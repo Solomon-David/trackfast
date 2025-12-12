@@ -1,99 +1,240 @@
+<template>
+  <v-container>
+    <h1>Create Shipment</h1>
+
+    <v-form @submit.prevent="submitShipment">
+      <v-text-field v-model="senderName" label="Sender Name" required />
+
+      <v-text-field v-model="senderEmail" label="Sender Email" type="email" required />
+
+      <v-text-field v-model="receiverName" label="Receiver Name" required />
+
+      <v-text-field
+        v-model="receiverEmail"
+        label="Receiver Email"
+        type="email"
+        required
+      />
+
+      <!-- Cities -->
+      <v-row>
+        <v-col cols="6">
+          <v-text-field v-model="fromCity" label="From City" required />
+        </v-col>
+        <v-col cols="6">
+          <v-text-field v-model="toCity" label="To City" required :disabled="sameCity" />
+        </v-col>
+      </v-row>
+
+      <v-checkbox v-model="sameCity" label="Same City Delivery" />
+
+      <!-- Package -->
+
+      <!-- Package Description -->
+      <v-textarea
+        v-model="packageDescription"
+        label="Package Description"
+        auto-grow
+        rows="2"
+        class="mb-4"
+      />
+      <v-row>
+        <v-col cols="4">
+          <v-text-field v-model="length" label="Length (cm)" type="number" required />
+        </v-col>
+        <v-col cols="4">
+          <v-text-field v-model="width" label="Width (cm)" type="number" required />
+        </v-col>
+        <v-col cols="4">
+          <v-text-field v-model="height" label="Height (cm)" type="number" required />
+        </v-col>
+      </v-row>
+
+      <v-text-field v-model="weight" label="Weight (kg)" type="number" required />
+
+      <!-- Insurance -->
+      <v-checkbox v-model="insuranceSelected" label="Add Insurance" />
+
+      <!-- COST PREVIEW -->
+      <v-card class="pa-4 mt-4" v-if="cost">
+        <h2 class="text-h5">Estimated Cost</h2>
+        <h1 class="text-h4 font-weight-bold">${{ cost.toLocaleString() }}</h1>
+        <v-btn class="mt-2" variant="tonal" @click="showBreakdown = true"
+          >View Breakdown</v-btn
+        >
+      </v-card>
+
+      <!-- CONFIRMATION MODAL -->
+      <v-dialog v-model="confirmPrice" max-width="500">
+        <v-card class="pa-4">
+          <h2 class="text-h6 mb-2">Confirm Shipping Price</h2>
+          <p>Please review the shipping cost below:</p>
+          <v-divider class="my-2" />
+          <div class="mb-1">
+            <p class="mt-2"><b>Same region delivery fee:</b> ${{ base }}</p>
+            <p class="mt-2">
+              <b>Product Dimensions:</b> ({{ length }}cm x {{ width }}cm x {{ height }}cm)
+              = ${{ (length * width * height) / pricing.volumetricDivisor }}
+            </p>
+            <p class="mt-2">
+              <b>Weight:</b> {{ weight }}kg = ${{ weight * pricing.pricePerKg }}
+            </p>
+            <p class="mt-2">
+              <b>Add package insurance?</b> {{ insuranceSelected ? "yes" : "no" }}.
+            </p>
+            <p class="mt-2" v-if="insuranceSelected">
+              <b>Insurance fee</b>: ${{ pricing.insuranceFee }}
+            </p>
+          </div>
+          <v-divider class="my-2" />
+          <h1 class="text-h5 font-weight-bold mb-4">${{ cost }}</h1>
+
+          <v-btn block color="primary" class="mb-2" @click="confirmAndSubmit"
+            >Accept & Create Shipment</v-btn
+          >
+          <v-btn block variant="tonal" @click="confirmPrice = false">Cancel</v-btn>
+        </v-card>
+      </v-dialog>
+
+      <v-btn
+        color="primary"
+        class="mt-4"
+        :loading="loading"
+        @click="openPriceConfirmation"
+      >
+        Get Cost
+      </v-btn>
+    </v-form>
+  </v-container>
+</template>
+
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, watch, onMounted, h } from "vue";
 import { useRouter } from "vue-router";
-
-import { useUserStore } from "@/stores/userStore";
-import { useShipmentStore } from "@/stores/shipmentStore";
-import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
 import { useShipmentCalculator } from "@/composables/useShipmentCalculator";
-
-// Stores
-const userStore = useUserStore();
-const shipmentStore = useShipmentStore();
-const pricingStore = usePricingSettingsStore();
-
-// Composable
-const { calculatedCost, calculateCost } = useShipmentCalculator();
+import { useShipmentStore } from "@/stores/shipmentStore";
+import { useUserStore } from "@/stores/userStore";
+import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
 
 const router = useRouter();
-
-// Form fields
-const senderName = ref(userStore.user?.fullName || "");
-const senderEmail = ref(userStore.user?.email || "");
-const senderAddress = ref("");
-const senderCity = ref("");
-
-const receiverName = ref("");
-const receiverEmail = ref("");
-const receiverAddress = ref("");
-const receiverCity = ref("");
-
-const weight = ref("");
-const dimensionLength = ref("");
-const dimensionWidth = ref("");
-const dimensionHeight = ref("");
-const description = ref("");
-
-const dialog = ref(false);
-const submitting = ref(false);
+const shipmentStore = useShipmentStore();
+const userStore = useUserStore();
+const pricing = ref(null);
+const base = ref(0);
 
 onMounted(async () => {
-  await pricingStore.fetchSettings();
+  await usePricingSettingsStore().fetchSettings();
+  pricing.value = usePricingSettingsStore().settings;
+  base.value = sameCity.value ? pricing.value.basePrice / 3 : pricing.value.basePrice;
+
+  if (userStore.user) {
+    senderName.value = userStore.user.fullName || "";
+    senderEmail.value = userStore.user.email || "";
+  }
 });
 
-// ======================================
-// OPEN QUOTE POPUP
-// ======================================
-const openQuoteDialog = async () => {
-  await calculateCost({
-    length: parseFloat(dimensionLength.value),
-    width: parseFloat(dimensionWidth.value),
-    height: parseFloat(dimensionHeight.value),
-    weight: parseFloat(weight.value),
-    senderCity: senderCity.value,
-    receiverCity: receiverCity.value,
-  });
+const loading = ref(false);
 
-  dialog.value = true;
-};
+// Form fields
+const senderName = ref("");
+const senderEmail = ref("");
+const receiverName = ref("John Doe");
+const receiverEmail = ref("sakesobia@gmail.com");
 
-// ======================================
-// CONFIRM & CREATE SHIPMENT
-// ======================================
-const confirmCreate = async () => {
-  submitting.value = true;
+const fromCity = ref("New York");
+const toCity = ref("Nevada");
+const sameCity = ref(false);
 
-  const payload = {
-    senderName: senderName.value,
-    senderEmail: senderEmail.value,
-    senderAddress: `${senderAddress.value}, ${senderCity.value}`,
+const length = ref(20);
+const width = ref(30);
+const height = ref(10);
+const weight = ref(5);
 
-    receiverName: receiverName.value,
-    receiverEmail: receiverEmail.value,
-    receiverAddress: `${receiverAddress.value}, ${receiverCity.value}`,
+const packageDescription = ref("Food");
 
-    weight: parseFloat(weight.value),
-    dimensionLength: parseFloat(dimensionLength.value),
-    dimensionWidth: parseFloat(dimensionWidth.value),
-    dimensionHeight: parseFloat(dimensionHeight.value),
+const insuranceSelected = ref(true);
 
-    description: description.value,
-    cost: calculatedCost.value,
-  };
+const showBreakdown = ref(false);
+const breakdown = ref({});
+const cost = ref();
+
+// Auto recalc cost whenever inputs change
+watch(
+  [length, width, height, weight, fromCity, toCity, sameCity, insuranceSelected],
+  async () => {
+    if (!length.value || !width.value || !height.value || !weight.value) return;
+
+    const result = pricing.value.calculateCost(
+      base.value,
+      length.value,
+      width.value,
+      height.value,
+      weight.value,
+      insurance.value
+    );
+
+    cost.value = result;
+    breakdown.value = result.breakdown;
+  }
+);
+
+watch(showBreakdown, async (newVal) => {
+  await usePricingSettingsStore().fetchSettings();
+  pricing.value = usePricingSettingsStore().settings;
+});
+
+watch(sameCity, () => {
+  base.value = sameCity.value
+    ? pricing.value.basePrice.toFixed(1) / 3
+    : pricing.value.basePrice;
+});
+
+// Submit shipment
+async function submitShipment() {
+  loading.value = true;
 
   try {
-    const created = await shipmentStore.createShipment(payload);
+    const payload = {
+      sender: { name: userStore?.user?.fullName, email: userStore?.user?.email },
+      receiver: { name: receiverName.value, email: receiverEmail.value },
+      fromCity: fromCity.value,
+      toCity: sameCity.value ? fromCity.value : toCity.value,
+      package: {
+        length: Number(length.value),
+        width: Number(width.value),
+        height: Number(height.value),
+        weight: Number(weight.value),
+        description: packageDescription.value,
+      },
+      insurance: insuranceSelected.value,
+      cost: cost.value,
+    };
 
-    if (created?.id) {
-      router.push(`/shipments/details/${created.id}`);
-    } else {
-      router.push("/user/shipments");
+    const shipment = await shipmentStore.createShipment(payload);
+
+    if (shipment) {
+      router.push(`/staff/shipments/${shipment.id}`);
     }
-  } catch (err) {
-    console.error("Error creating shipment:", err);
+  } catch (error) {
+    console.error("Create shipment failed:", error);
   } finally {
-    submitting.value = false;
-    dialog.value = false;
+    loading.value = false;
   }
-};
+}
+const confirmPrice = ref(false);
+
+function openPriceConfirmation() {
+  confirmPrice.value = true;
+}
+
+async function confirmAndSubmit() {
+  confirmPrice.value = false;
+  await submitShipment();
+}
 </script>
+
+<style scoped>
+.pa-4 {
+  padding: 16px !important;
+}
+</style>

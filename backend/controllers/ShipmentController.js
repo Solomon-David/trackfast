@@ -62,51 +62,33 @@ export const createShipment = async (req, res) => {
     const user = await User.findById(req.user.id);
     const userEmail = user?.email;
 
-    // Build a summary email
-    if (userEmail) {
-      const emailBody = `
-        <h2>Shipment Created Successfully</h2>
-        <p>Dear ${senderName},</p>
-        <p>Your shipment has been registered in the TrackFast system.</p>
-        <hr />
-        <h3>Shipment Summary</h3>
-        <p><strong>Tracking Number:</strong> ${trackingNumber}</p>
-        <p><strong>Status:</strong> ${shipment.status}</p>
-        <h4>Sender Information</h4>
-        <ul>
-          <li><strong>Name:</strong> ${senderName}</li>
-          <li><strong>Address:</strong> ${senderAddress}</li>
-          <li><strong>Email:</strong> ${senderEmail}</li>
-        </ul>
-        <h4>Receiver Information</h4>
-        <ul>
-          <li><strong>Name:</strong> ${receiverName}</li>
-          <li><strong>Address:</strong> ${receiverAddress}</li>
-          <li><strong>Email:</strong> ${receiverEmail}</li>
-        </ul>
-        <h4>Package Details</h4>
-        <ul>
-          <li><strong>Weight:</strong> ${weight} kg</li>
-          <li><strong>Dimensions:</strong> ${dimensionLength}L × ${dimensionWidth}W × ${dimensionHeight}H cm</li>
-          ${description ? `<li><strong>Description:</strong> ${description}</li>` : ""}
-        </ul>
-        <hr />
-        <p>You can track your shipment using tracking number: <strong>${trackingNumber}</strong></p>
-        <p>Thank you for using TrackFast!</p>
-      `;
-
-      // Queue email notification to user
-      await emailQueue.add("sendEmail", {
-        to: userEmail,
-        subject: `Shipment Created - Tracking #${trackingNumber}`,
-        html: emailBody,
-      });
-    }
-
-    await createTransaction({amount, customer: req.user.id, shipment: shipment.id});
+    
     return res.json({ message: "Shipment created", shipment });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const sendReceiptEmail = async (req, res) => {
+  try {
+    const { image, email, trackingNumber, message } = req.body;
+    await emailQueue.add("sendEmail", {
+      to: email,
+      from: process.env.EMAIL_USER,
+      subject: `Receipt for Shipment #${trackingNumber}`, 
+      message,
+      attachments: [
+        {
+          filename: `receipt_${trackingNumber}.png`,
+          content: image.split("base64,")[1],
+          encoding: "base64",
+        },
+      ],
+    });
+    res.json({ message: "Receipt email sent successfully." });
+  } catch (error) {
+    console.error("Send Receipt Email Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
