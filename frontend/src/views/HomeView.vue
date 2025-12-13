@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import AboutView from "@/views/AboutView.vue";
+import ContactView from '@/views/ContactView.vue';
 
 const router = useRouter();
 const trackingNumber = ref("");
@@ -282,6 +283,7 @@ async function calculateCost() {
       </v-container>
     </section>
     <AboutView />
+    <ContactView />
   </v-container>
 </template>
 

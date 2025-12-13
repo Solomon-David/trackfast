@@ -6,12 +6,38 @@ import { generateUserToken, generateStaffToken } from "../utils/generateTokens.j
 import sendEmail from "../utils/sendEmail.js";
 import { hashPassword, comparePassword } from "../utils/hashPassword.js";
 
+//Ensuring admin exists
+export const ensureAdmin = async() => {
+  const check = await User.findOne({email: process.env.EMAIL_USER});
+
+  if(check){
+    console.log("Admin exists.")
+  }
+  
+  else{
+    
+    const hashedPassword = await hashPassword("Woga");
+    
+    const admin = await User.create({
+      fullName: "The Admin",
+      email: process.env.EMAIL_USER,
+      password: hashedPassword,
+      role: "admin",
+      staffPosition: null,
+      isVerified: true,
+    });
+    
+    await admin.save();
+    console.log("Admin created.")
+  }
+}
+
 // ===========================
 // Contact us (Customer)
 // ===========================
   export const contactUs = async (req,res) => {
     try {
-      const { email, fullName, message} = req.body;
+      const {fullName, email, message} = req.body;
       await sendEmail({
       to: process.env.EMAIL_USER,
       subject: "User contact",
@@ -19,9 +45,10 @@ import { hashPassword, comparePassword } from "../utils/hashPassword.js";
             <h3>Email: ${email}</h3>
             <p><b>Message</b>: ${message}</p>`
     });
+    return true;
     }catch(error){
     console.error("Register Error:", error);
-    return res.status(500).json({ message: "Server error." });
+    return false;
     }
   }
 

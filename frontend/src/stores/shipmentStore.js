@@ -36,6 +36,7 @@ export const useShipmentStore = defineStore('shipmentStore', () => {
   const getShipmentByTrackingNumber = async (trackingNumber) => {
     loading.value = true
     try {
+      console.log("Fetched shipment details:", trackingNumber);
       const res = await axios.post(`/shipments/details`,{trackingNumber});
       return res.data;
     } catch (error) {
@@ -46,10 +47,10 @@ export const useShipmentStore = defineStore('shipmentStore', () => {
     }
   }
 
-  const updateShipmentStatus = async (trackingNumber, status, currentLocation) => {
+  const updateShipmentStatus = async (trackingNumber, status, currentLocation, deliveryDate) => {
     loading.value = true
     try {
-      const res = await axios.post('/shipments/update-status', { trackingNumber, status, currentLocation })
+      const res = await axios.post('/shipments/update-status', { trackingNumber, status, currentLocation, deliveryDate });
       return res.data
     } catch (error) {
       console.error('Error updating shipment status:', error)
@@ -72,5 +73,32 @@ export const useShipmentStore = defineStore('shipmentStore', () => {
     }
   }
 
-  return { shipments, loading, getMyShipments, getShipmentByTrackingNumber, createShipment, updateShipmentStatus, sendReceiptEmail }
+  const getAllShipments = async () => {
+    loading.value = true;
+    try {
+      const res = await axios.get('/shipments/all');
+      shipments.value = res.data;
+    } catch (error) {
+      console.error('Error fetching all shipments:', error);
+      throw error;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  const deleteShipment = async (trackingNumber) => {
+    loading.value = true;
+    try {
+      await axios.delete(`/shipments/delete/${trackingNumber}`);
+      shipments.value = shipments.value.filter(shipment => shipment.trackingNumber !== trackingNumber);
+    } catch (error) {
+      console.error('Error deleting shipment:', error);
+      throw error;
+    } finally {
+      loading.value = false;
+    } 
+  }
+
+
+  return { shipments, loading, getMyShipments, getShipmentByTrackingNumber, createShipment, updateShipmentStatus, sendReceiptEmail, getAllShipments, deleteShipment  }
 })

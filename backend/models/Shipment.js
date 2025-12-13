@@ -13,13 +13,13 @@ const shipmentSchema = new mongoose.Schema(
     sender: {
       name: String,
       address: String,
-      email: String, // Phone numbers are typically stored as String
+      email: String, 
     },
 
     receiver: {
       name: String,
       address: String,
-      email: String, // Phone numbers are typically stored as String
+      email: String, 
     },
 
     package: {
@@ -30,6 +30,8 @@ const shipmentSchema = new mongoose.Schema(
         height: Number,
       },
       description: String,
+      senderCity: String,
+      receiverCity: String,
     },
 
     status: {
@@ -40,16 +42,17 @@ const shipmentSchema = new mongoose.Schema(
         "in-transit",
         "out-for-delivery",
         "delivered",
-        "cancelled",
+        "cancelled"
       ],
       default: "pending",
     },
 
-    currentLocation: { type: String, default: "Warehouse" },
+    currentLocation: { type: String, },
 
     cost: Number,
 
-    price: Number,
+    deliveryDate: { type: Date},
+
   },
   { timestamps: true }
 );

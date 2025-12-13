@@ -27,12 +27,6 @@
           <v-list-item-title>My Shipments</v-list-item-title>
         </v-list-item>
 
-        <!-- My Transactions -->
-        <v-list-item link to="/user/transactions" v-if="isLoggedIn">
-          <v-icon class="me-3">mdi-cash-multiple</v-icon>
-          <v-list-item-title>My Transactions</v-list-item-title>
-        </v-list-item>
-
         <v-divider class="my-2"></v-divider>
 
         <!-- Staff Section -->
@@ -42,9 +36,9 @@
             <v-list-item-title>Staff Dashboard</v-list-item-title>
           </v-list-item>
 
-          <v-list-item link to="/staff/pickups">
+          <v-list-item link to="/staff/shipments">
             <v-icon class="me-3">mdi-package-up</v-icon>
-            <v-list-item-title>Pickup Requests</v-list-item-title>
+            <v-list-item-title>Shipments</v-list-item-title>
           </v-list-item>
 
           <v-list-item link to="/staff/create-transaction">
@@ -83,7 +77,7 @@
           </v-list-item>
 
           <v-list-item link to="/admin/pricing-settings">
-            <v-list-item-icon><v-icon>mdi-cash</v-icon></v-list-item-icon>
+            <v-icon><v-icon>mdi-cash</v-icon></v-icon>
             <v-list-item-title> Pricing Settings</v-list-item-title>
           </v-list-item>
         </template>

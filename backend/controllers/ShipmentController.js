@@ -5,7 +5,7 @@ import TrackingEvent from "../models/TrackingEvent.js";
 import User from "../models/User.js";
 import { emailQueue } from "../queues/emailQueue.js";
 import { generateTrackingNumber } from "../utils/generateTrackingNumber.js";
-import { createTransaction } from "../controllers/TransactionController.js"
+import sendEmail from '../utils/sendEmail.js';
 
 // Create a new shipment
 export const createShipment = async (req, res) => {
@@ -33,27 +33,8 @@ export const createShipment = async (req, res) => {
       // link shipment to authenticated user as customer
       customer: req.user?.id,
       //sender subdocument 
-      sender: {
-        name: senderName,
-        address: senderAddress,
-        email: senderEmail,
-      },      
-      // receiver subdocument with name, address, phone
-      receiver: {
-        name: receiverName,
-        address: receiverAddress,
-        email: receiverEmail,
-      },
-      // package subdocument with weight, dimensions object, description
-      package: {
-        weight,
-        dimensions: {
-          length: dimensionLength,
-          width: dimensionWidth,
-          height: dimensionHeight,
-        },
-        description,
-      },
+      ...req.body,
+      currentLocation: req.body.package.senderCity
     };
 
     const shipment = await Shipment.create(shipmentPayload);
@@ -72,12 +53,13 @@ export const createShipment = async (req, res) => {
 
 export const sendReceiptEmail = async (req, res) => {
   try {
+    console.log("sending email");
     const { image, email, trackingNumber, message } = req.body;
-    await emailQueue.add("sendEmail", {
+    console.log(image, email, trackingNumber);
+    await sendEmail( {
       to: email,
-      from: process.env.EMAIL_USER,
       subject: `Receipt for Shipment #${trackingNumber}`, 
-      message,
+      text: message,
       attachments: [
         {
           filename: `receipt_${trackingNumber}.png`,
@@ -108,7 +90,7 @@ export const getMyShipments = async (req, res) => {
 export const getAllShipments = async (req, res) => {
   try {
     const shipments = await Shipment.find().sort({ createdAt: -1 });
-    return res.json({ shipments });
+    return res.json( shipments );
   } catch (error) {
     console.error("Get All Shipments Error:", error);
     return res.status(500).json({ message: "Server error." });
@@ -117,8 +99,8 @@ export const getAllShipments = async (req, res) => {
 
 export const updateShipmentStatus = async (req, res) => {
   try {
-    const { trackingNumber, status, currentLocation } = req.body;
-
+    const { trackingNumber, status, currentLocation, deliveryDate } = req.body;
+console.log("Update Shipment Status Request:", req.body);
     const shipment = await Shipment.findOne({ trackingNumber });
     if (!shipment) return res.status(404).json({ message: "Shipment not found" });
 
@@ -127,6 +109,14 @@ export const updateShipmentStatus = async (req, res) => {
     shipment.status = status;
     if (currentLocation) {
       shipment.currentLocation = currentLocation;
+    }
+
+    if (deliveryDate) {
+      shipment.deliveryDate = deliveryDate;
+    }
+
+    if  (status=="delivered") {
+      shipment.currentLocation = shipment.package.receiverCity;
     }
     await shipment.save();
 
@@ -139,49 +129,27 @@ export const updateShipmentStatus = async (req, res) => {
       const statusMessages = {
         pending: "Your shipment is pending and awaiting pickup.",
         received: "Your shipment has been received at our facility.",
-        "in-transit": "Your shipment is on its way to the destination.",
+        "in-transit": "Your shipment is on its way to the destination. It should be delivered on ${{ shipment.deliveryDate ? shipment.deliveryDate.toDateString() : 'soon' }}.",
         "out-for-delivery": "Your shipment is out for delivery today.",
-        delivered: "Your shipment has been successfully delivered!",
+        delivered: "Your package is ready for pickup! ",
         cancelled: "Your shipment has been cancelled.",
       };
 
       const statusMessage = statusMessages[status?.toLowerCase()] || `Your shipment status has been updated to ${status}.`;
-
-      const emailBody = `
-        <h2>Shipment Status Update</h2>
-        <p>Dear ${shipment.sender?.name || "Valued Customer"},</p>
-        <p>${statusMessage}</p>
-        <hr />
-        <h3>Shipment Details</h3>
-        <ul>
-          <li><strong>Tracking Number:</strong> ${trackingNumber}</li>
-          <li><strong>Previous Status:</strong> ${oldStatus}</li>
-          <li><strong>Current Status:</strong> ${status}</li>
-          ${oldLocation !== shipment.currentLocation ? `<li><strong>Previous Location:</strong> ${oldLocation}</li>` : ""}
-          <li><strong>Current Location:</strong> ${shipment.currentLocation || "In Transit"}</li>
-        </ul>
-        <h4>Receiver Information</h4>
-        <ul>
-          <li><strong>Name:</strong> ${shipment.receiver?.name || "N/A"}</li>
-          <li><strong>Address:</strong> ${shipment.receiver?.address || "N/A"}</li>
-        </ul>
-        <h4>Package Details</h4>
-        <ul>
-          <li><strong>Weight:</strong> ${shipment.package?.weight || "N/A"} kg</li>
-          <li><strong>Dimensions:</strong> ${shipment.package?.dimensions ? `${shipment.package.dimensions.length}L × ${shipment.package.dimensions.width}W × ${shipment.package.dimensions.height}H cm` : "N/A"}</li>
-          ${shipment.package?.description ? `<li><strong>Description:</strong> ${shipment.package.description}</li>` : ""}
-        </ul>
-        <hr />
-        <p>For more details, you can track your shipment at any time using tracking number: <strong>${trackingNumber}</strong></p>
-        <p>Thank you for using TrackFast!</p>
-      `;
-
+      
       // Queue email notification to customer
-      await emailQueue.add("sendEmail", {
-        to: customerEmail,
-        subject: `Shipment Status Updated: ${status.toUpperCase()} - Tracking #${trackingNumber}`,
-        html: emailBody,
-      });
+      await sendEmail( {
+      to: email,
+      subject: `Receipt for Shipment #${trackingNumber}`, 
+      text: message,
+      attachments: [
+        {
+          filename: `receipt_${trackingNumber}.png`,
+          content: image.split("base64,")[1],
+          encoding: "base64",
+        },
+      ],
+    });
     }
 
     res.json({ message: "Shipment status updated", shipment });
@@ -193,7 +161,8 @@ export const updateShipmentStatus = async (req, res) => {
 
 export const deleteShipment = async (req, res) => {
   try {
-    await Shipment.findByIdAndDelete(req.params.id);
+    console.log("deleting")
+    await Shipment.deleteOne({trackingNumber:req.params.trackingNumber});
     return res.json({ message: "Shipment deleted." });
   } catch (error) {
     console.error("Delete Shipment Error:", error);

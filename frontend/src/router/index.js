@@ -27,7 +27,7 @@ import ShipmentDetailsView from '@/views/shipment/ShipmentDetailsView.vue'
 
 // Staff Views
 import StaffDashboardView from '@/views/staff/StaffDashboardView.vue'
-import StaffPickupRequestsView from '@/views/staff/StaffPickupRequestsView.vue'
+import StaffPickupRequestsView from '@/views/staff/StaffShipmentsView.vue'
 import StaffUpdateShipmentStatusView from '@/views/staff/StaffUpdateShipmentStatusView.vue'
 
 // Admin Views
@@ -76,7 +76,9 @@ const router = createRouter({
       component: MainLayout,
       children: [
         { path: 'create', component: CreateShipmentView, meta: { requiresAuth: true } },
-        { path: 'details/:id', component: ShipmentDetailsView, meta: { requiresAuth: true } }
+        { path: 'details/:trackingNumber', component: ShipmentDetailsView, meta: { requiresAuth: true } },
+        { path: 'update-status', component: ()=>import('@/views/staff/StaffUpdateShipmentStatusView.vue'), meta: { requiresAuth: true, staffOnly: true } },
+        { path: 'update-status/:trackingNumber', component: ()=>import('@/views/staff/StaffUpdateShipmentStatusView.vue'), meta: { requiresAuth: true, staffOnly: true } },
       ]
     },
 
@@ -87,8 +89,7 @@ const router = createRouter({
       meta: { requiresAuth: true, staffOnly: true },
       children: [
         { path: 'dashboard', component: ()=>import('@/views/staff/StaffDashboardView.vue') },
-        { path: 'pickups', component: ()=>import('@/views/staff/StaffPickupRequestsView.vue') },
-        { path: 'update-status', component: ()=>import('@/views/staff/StaffUpdateShipmentStatusView.vue') },
+        { path: 'shipments', component: ()=>import('@/views/staff/StaffShipmentsView.vue') },
         { path: 'create-transaction', component: () => import('@/views/staff/CreateTransactionView.vue')}
       ]
     },
@@ -99,28 +100,11 @@ const router = createRouter({
       component: MainLayout,
       meta: { requiresAuth: true, adminOnly: true },
       children: [
-        {
-  path: 'dashboard',
-  component: () => import('@/views/admin/AdminDashboardView.vue')
-},
-{
-  path: 'users',
-  component: () => import('@/views/admin/AdminUsersView.vue')
-},
-{
-  path: 'create-staff',
-  component: () => import('@/views/admin/AdminCreateStaffView.vue')
-},
-{
-  path: 'activity',
-  component: () => import('@/views/admin/AdminStaffActivityLogsView.vue')
-},
-
-        {
-  path: "pricing-settings",
-  component: () => import("@/views/admin/PricingSettingsView.vue")
-}
-
+        {path: 'dashboard',  component: () => import('@/views/admin/AdminDashboardView.vue')},
+        {path: 'users',  component: () => import('@/views/admin/AdminUsersView.vue')},
+        {path: 'create-staff',  component: () => import('@/views/admin/AdminCreateStaffView.vue')},
+        {path: 'activity',  component: () => import('@/views/admin/AdminStaffActivityLogsView.vue')},
+        {path: "pricing-settings",  component: () => import("@/views/admin/PricingSettingsView.vue")}
       ]
     },
 

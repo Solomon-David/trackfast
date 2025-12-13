@@ -15,28 +15,33 @@
       <v-row>
         <v-col cols="12" md="6">
           <h3 class="mb-4">General Information</h3>
-          <p><strong>Tracking Number:</strong> {{ shipment.trackingNumber }}</p>
+          <p><strong>Tracking Number:</strong> {{ shipment?.trackingNumber }}</p>
           <p>
-            <strong>Status:</strong>
-            <v-chip :color="getStatusColor(shipment.status)">{{
-              shipment.status
-            }}</v-chip>
+            <strong>Status: </strong>
+            <span
+              :style="{ color: getStatusColor(shipment?.status) }"
+              class="text-capitalize"
+              >{{ shipment?.status }}</span
+            >
           </p>
-          <p><strong>Current Location:</strong> {{ shipment.currentLocation }}</p>
-          <p v-if="shipment.createdAt">
-            <strong>Created:</strong> {{ formatDate(shipment.createdAt) }}
+          <p><strong>Current Location:</strong> {{ shipment?.currentLocation }}</p>
+          <p v-if="shipment?.createdAt">
+            <strong>Created:</strong> {{ formatDate(shipment?.createdAt) }}
+          </p>
+          <p v-if="shipment?.deliveryDate">
+            <strong>Delivery Date:</strong> {{ formatDate(shipment?.deliveryDate) }}
           </p>
         </v-col>
         <v-col cols="12" md="6">
           <h3 class="mb-4">Package Information</h3>
-          <p><strong>Weight:</strong> {{ shipment.package?.weight }} kg</p>
-          <p v-if="shipment.package?.dimensions">
-            <strong>Dimensions:</strong> {{ shipment.package.dimensions.length }} ×
-            {{ shipment.package.dimensions.width }} ×
-            {{ shipment.package.dimensions.height }} cm
+          <p><strong>Weight:</strong> {{ shipment?.package?.weight }} kg</p>
+          <p v-if="shipment?.package?.dimensions">
+            <strong>Dimensions:</strong> {{ shipment?.package.dimensions.length }} ×
+            {{ shipment?.package.dimensions.width }} ×
+            {{ shipment?.package.dimensions.height }} cm
           </p>
-          <p v-if="shipment.package?.description">
-            <strong>Description:</strong> {{ shipment.package.description }}
+          <p v-if="shipment?.package?.description">
+            <strong>Description:</strong> {{ shipment?.package.description }}
           </p>
         </v-col>
       </v-row>
@@ -46,34 +51,29 @@
       <v-row>
         <v-col cols="12" md="6">
           <h3 class="mb-4">Sender Information</h3>
-          <p v-if="shipment.sender"><strong>Name:</strong> {{ shipment.sender.name }}</p>
-          <p v-if="shipment.sender">
-            <strong>Address:</strong> {{ shipment.sender.address }}
+          <p><strong>Name:</strong> {{ shipment?.sender.name }}</p>
+          <p>
+            <strong>Address:</strong> {{ shipment?.sender.address }},
+            {{ shipment?.package.senderCity }}
           </p>
-          <p v-if="shipment.sender">
-            <strong>Phone:</strong> {{ shipment.sender.phone }}
-          </p>
+          <p><strong>Email:</strong> {{ shipment?.sender.email }}</p>
         </v-col>
         <v-col cols="12" md="6">
           <h3 class="mb-4">Receiver Information</h3>
-          <p v-if="shipment.receiver">
-            <strong>Name:</strong> {{ shipment.receiver.name }}
+          <p><strong>Name:</strong> {{ shipment?.receiver.name }}</p>
+          <p>
+            <strong>Address:</strong> {{ shipment?.receiver.address }},
+            {{ shipment?.package.receiverCity }}
           </p>
-          <p v-if="shipment.receiver">
-            <strong>Address:</strong> {{ shipment.receiver.address }}
-          </p>
-          <p v-if="shipment.receiver">
-            <strong>Phone:</strong> {{ shipment.receiver.phone }}
-          </p>
+          <p><strong>Email:</strong> {{ shipment?.receiver.email }}</p>
         </v-col>
       </v-row>
 
       <v-divider class="my-6" />
 
-      <v-row v-if="shipment.price">
+      <v-row>
         <v-col cols="12">
-          <h3 class="mb-4">Pricing</h3>
-          <p><strong>Price:</strong> ₦{{ shipment.price }}</p>
+          <p><strong>Cost:</strong> ${{ shipment?.cost }}</p>
         </v-col>
       </v-row>
     </v-card>
@@ -90,7 +90,7 @@ const shipmentStore = useShipmentStore();
 
 const loading = ref(false);
 const error = ref(null);
-const shipment = computed(() => shipmentStore.currentShipment || {});
+const shipment = ref(null);
 
 const getStatusColor = (status) => {
   const statusColors = {
@@ -116,17 +116,18 @@ const formatDate = (date) => {
 };
 
 onMounted(async () => {
-  const shipmentId = route.params.id;
+  console.log("Loading shipment details for ID:", route.params.trackingNumber);
+  const shipmentId = route.params.trackingNumber;
   if (shipmentId) {
     loading.value = true;
     try {
-      await shipmentStore.getShipmentById(shipmentId);
+      shipment.value = await shipmentStore.getShipmentByTrackingNumber(shipmentId);
     } catch (err) {
       error.value = err.response?.data?.message || "Failed to load shipment details";
       console.error("Error loading shipment:", err);
     } finally {
       loading.value = false;
-    } 
+    }
   }
 });
 </script>

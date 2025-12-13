@@ -27,7 +27,7 @@ export const trackPackage = async (req, res) => {
 // Add a new tracking event
 export const addTrackingEvent = async (req, res) => {
   try {
-    const { trackingNumber, status, currentLocation } = req.body;
+    const { trackingNumber, status, currentLocation, deliveryDate } = req.body;
     const shipment = await Shipment.findOne({ trackingNumber });
     if (!shipment) {
       console.log("no such shipment");
@@ -38,6 +38,7 @@ export const addTrackingEvent = async (req, res) => {
       shipment: shipment._id,
       trackingNumber,
       status,
+      deliveryDate,
       location: currentLocation,
       updatedBy: req.user.id,
       timestamp: new Date(),
@@ -45,6 +46,10 @@ export const addTrackingEvent = async (req, res) => {
     
     shipment.currentLocation = currentLocation;
     shipment.status = status;
+    shipment.deliveryDate = deliveryDate || shipment.deliveryDate;
+    if (status === "delivered") {
+      shipment.currentLocation = shipment.package.receiverCity;
+    }
     await shipment.save();
 
     // Queue email to receiver
@@ -52,7 +57,8 @@ export const addTrackingEvent = async (req, res) => {
       to: shipment.receiverEmail,
       subject: `Shipment Update: ${status}`,
       text: `Your shipment ${trackingNumber} is ${status}.`,
-      html: `<p>Your shipment <strong>#${trackingNumber}</strong> is now <strong>${status}</strong> at ${currentLocation}</p>`,
+      html: `<p>Your shipment <strong>#${trackingNumber}</strong> is now <strong>${status}</strong> at ${currentLocation}</p>.
+      <p>Estimated Delivery Date: ${shipment.deliveryDate ? shipment.deliveryDate.toDateString() : 'N/A'}</p>`,
     });
 
     await event.save();    

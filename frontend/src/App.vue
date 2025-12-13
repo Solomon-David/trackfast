@@ -1,13 +1,15 @@
 <!-- /frontend/src/App.vue -->
 <template>
   <v-app>
-    <router-view />
+    <Suspense>
+      <router-view />
+    </Suspense>
   </v-app>
 </template>
 
 <script setup>
-import {ref, provide} from 'vue';
-  const drawer = ref(false);
+import { ref, provide } from "vue";
+const drawer = ref(false);
 const toggleDrawer = () => (drawer.value = !drawer.value);
 
 provide("drawer", drawer);

@@ -33,8 +33,8 @@ router.post("/update-status", protect, staffOrAdmin, TrackingController.addTrack
 // ==========================
 
 // Delete shipment by ID
-router.delete("/delete/:trackingNumber", protect, adminOnly, ShipmentController.deleteShipment);
+router.delete("/delete/:trackingNumber", protect, staffOrAdmin, ShipmentController.deleteShipment);
 
-router.post("/send-receipt", protect, ShipmentController.sendReceiptEmail);
+router.post("/send-receipt", protect, staffOrAdmin, ShipmentController.sendReceiptEmail);
 
 export default router;

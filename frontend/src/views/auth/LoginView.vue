@@ -19,6 +19,7 @@
                 v-model="password"
                 label="Password"
                 type="password"
+                @keypress.enter="handleLogin"
                 required
               ></v-text-field>
             </v-form>

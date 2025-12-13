@@ -18,10 +18,20 @@
 
       <div v-if="shipmentLoaded" class="mb-4">
         <v-card class="pa-4">
-          <p><strong>Current Status:</strong> {{ currentShipment?.status }}</p>
-          <p><strong>Current Location:</strong> {{ currentShipment?.currentLocation }}</p>
-          <p><strong>Receiver:</strong> {{ currentShipment?.receiver?.name }}</p>
-          <p><strong>Description:</strong> {{ currentShipment?.package?.description }}</p>
+          <p class="text-capitalize">
+            <strong>Current Status:</strong> {{ currentShipment?.status }}
+          </p>
+          <p class="text-capitalize">
+            <strong>Current Location:</strong> {{ currentShipment?.currentLocation }}
+          </p>
+
+          <p class="text-capitalize">
+            <strong>Description:</strong> {{ currentShipment?.package?.description }}
+          </p>
+          <p class="text-capitalize">
+            <strong>Delivery Date:</strong>
+            {{ new Date(currentShipment?.deliveryDate).toISOString().slice(0, 10) }}
+          </p>
         </v-card>
       </div>
 
@@ -35,6 +45,12 @@
       <v-text-field
         v-model="currentLocation"
         label="Change Location"
+        :disabled="!shipmentLoaded"
+      />
+      <v-text-field
+        v-model="deliveryDate"
+        label="Delivery Date"
+        type="date"
         :disabled="!shipmentLoaded"
       />
       <v-btn
@@ -59,18 +75,28 @@ v-container {
 </style>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useShipmentStore } from "@/stores/shipmentStore";
+import { useRouter } from "vue-router";
 
 const shipmentStore = useShipmentStore();
 
 const trackingNumber = ref("");
 const status = ref("");
 const currentLocation = ref("");
+const deliveryDate = ref(new Date().toISOString().slice(0, 10));
 const fetchingShipment = ref(false);
 const shipmentLoaded = ref(false);
 const error = ref(null);
 const success = ref(null);
+
+onMounted(() => {
+  const route = useRouter().currentRoute;
+  if (route.value.params.trackingNumber) {
+    trackingNumber.value = route.value.params.trackingNumber;
+    fetchShipmentDetails();
+  }
+});
 
 const statuses = [
   "pending",
@@ -84,7 +110,6 @@ const statuses = [
 const currentShipment = ref(null);
 
 const fetchShipmentDetails = async () => {
-  console.log("Fetching shipment for tracking number:", trackingNumber.value);
   if (!trackingNumber.value.trim()) {
     shipmentLoaded.value = false;
     error.value = null;
@@ -100,8 +125,8 @@ const fetchShipmentDetails = async () => {
     );
     currentShipment.value = res;
     if (currentShipment) {
-      status.value = currentShipment.status || "pending";
-      currentLocation.value = currentShipment.currentLocation || "";
+      status.value = currentShipment.value.status || "pending";
+      currentLocation.value = currentShipment.value.currentLocation || "";
       shipmentLoaded.value = true;
     }
   } catch (err) {
@@ -118,15 +143,9 @@ const updateStatus = async () => {
     const result = await shipmentStore.updateShipmentStatus(
       trackingNumber.value,
       status.value,
-      currentLocation.value
+      currentLocation.value,
+      deliveryDate.value
     );
-
-    console.log("Update result:", result);
-    console.log("Current values:", {
-      currentLocation: currentLocation.value,
-      status: status.value,
-    });
-
     if (result?.success) {
       success.value = "Shipment updated successfully";
     } else {

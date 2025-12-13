@@ -3,26 +3,51 @@
     <h1>Create Shipment</h1>
 
     <v-form @submit.prevent="submitShipment">
-      <v-text-field v-model="senderName" label="Sender Name" required />
+      <v-text-field v-model="senderName" label="Sender's Name" required disabled />
 
-      <v-text-field v-model="senderEmail" label="Sender Email" type="email" required />
+      <v-text-field
+        v-model="senderEmail"
+        label="Sender's Email"
+        type="email"
+        required
+        disabled
+      />
 
-      <v-text-field v-model="receiverName" label="Receiver Name" required />
+      <v-row>
+        <v-col cols="7">
+          <v-text-field v-model="senderAddress" label="Sender's Address" required />
+        </v-col>
+        <v-col cols="5">
+          <v-text-field
+            v-model="senderCity"
+            label="Sender's City"
+            required
+            :disabled="sameCity"
+          />
+        </v-col>
+      </v-row>
+
+      <v-text-field v-model="receiverName" label="Receiver's Name" required />
 
       <v-text-field
         v-model="receiverEmail"
-        label="Receiver Email"
+        label="Receiver's Email"
         type="email"
         required
       />
 
       <!-- Cities -->
       <v-row>
-        <v-col cols="6">
-          <v-text-field v-model="fromCity" label="From City" required />
+        <v-col cols="7">
+          <v-text-field v-model="receiverAddress" label="Receiver's Address" required />
         </v-col>
-        <v-col cols="6">
-          <v-text-field v-model="toCity" label="To City" required :disabled="sameCity" />
+        <v-col cols="5">
+          <v-text-field
+            v-model="receiverCity"
+            label="Receiver's City"
+            required
+            :disabled="sameCity"
+          />
         </v-col>
       </v-row>
 
@@ -54,15 +79,6 @@
 
       <!-- Insurance -->
       <v-checkbox v-model="insuranceSelected" label="Add Insurance" />
-
-      <!-- COST PREVIEW -->
-      <v-card class="pa-4 mt-4" v-if="cost">
-        <h2 class="text-h5">Estimated Cost</h2>
-        <h1 class="text-h4 font-weight-bold">${{ cost.toLocaleString() }}</h1>
-        <v-btn class="mt-2" variant="tonal" @click="showBreakdown = true"
-          >View Breakdown</v-btn
-        >
-      </v-card>
 
       <!-- CONFIRMATION MODAL -->
       <v-dialog v-model="confirmPrice" max-width="500">
@@ -98,12 +114,22 @@
 
       <v-btn
         color="primary"
-        class="mt-4"
+        class="mt-4 mb-4"
         :loading="loading"
         @click="openPriceConfirmation"
       >
         Get Cost
       </v-btn>
+      <v-alert v-if="sendStatus == 'success'" type="success">
+        Success! Please make your payment. Your trackingNumber is
+        <b>{{ shipment.shipment.trackingNumber }}</b
+        >.
+        <v-icon @click="copyTrackingNumber">{{ copyText }}</v-icon>
+      </v-alert>
+
+      <v-alert v-else-if="sendStatus == 'error'" type="error">
+        Sorry. An error occurred!
+      </v-alert>
     </v-form>
   </v-container>
 </template>
@@ -111,7 +137,6 @@
 <script setup>
 import { ref, watch, onMounted, h } from "vue";
 import { useRouter } from "vue-router";
-import { useShipmentCalculator } from "@/composables/useShipmentCalculator";
 import { useShipmentStore } from "@/stores/shipmentStore";
 import { useUserStore } from "@/stores/userStore";
 import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
@@ -138,54 +163,51 @@ const loading = ref(false);
 // Form fields
 const senderName = ref("");
 const senderEmail = ref("");
-const receiverName = ref("John Doe");
-const receiverEmail = ref("sakesobia@gmail.com");
-
-const fromCity = ref("New York");
-const toCity = ref("Nevada");
+const senderAddress = ref("");
+const receiverName = ref("");
+const receiverEmail = ref("");
+const receiverAddress = ref("");
+const senderCity = ref("");
 const sameCity = ref(false);
+const receiverCity = ref("");
 
 const length = ref(20);
 const width = ref(30);
 const height = ref(10);
 const weight = ref(5);
+const confirmPrice = ref(false);
+const cost = ref(0);
 
-const packageDescription = ref("Food");
-
+const packageDescription = ref("");
 const insuranceSelected = ref(true);
 
-const showBreakdown = ref(false);
-const breakdown = ref({});
-const cost = ref();
+const sendStatus = ref("");
+const shipment = ref(null);
+
+const copyText = ref("mdi-clipboard-outline");
 
 // Auto recalc cost whenever inputs change
-watch(
-  [length, width, height, weight, fromCity, toCity, sameCity, insuranceSelected],
-  async () => {
-    if (!length.value || !width.value || !height.value || !weight.value) return;
 
-    const result = pricing.value.calculateCost(
-      base.value,
-      length.value,
-      width.value,
-      height.value,
-      weight.value,
-      insurance.value
-    );
-
-    cost.value = result;
-    breakdown.value = result.breakdown;
-  }
-);
-
-watch(showBreakdown, async (newVal) => {
+watch(confirmPrice, async (newVal) => {
   await usePricingSettingsStore().fetchSettings();
   pricing.value = usePricingSettingsStore().settings;
+  if (!length.value || !width.value || !height.value || !weight.value) return;
+
+  const result = usePricingSettingsStore().calculateCost(
+    base.value,
+    length.value,
+    width.value,
+    height.value,
+    weight.value,
+    insuranceSelected.value
+  );
+
+  cost.value = Number(result).toFixed(2);
 });
 
 watch(sameCity, () => {
   base.value = sameCity.value
-    ? pricing.value.basePrice.toFixed(1) / 3
+    ? (pricing.value.basePrice / 3).toFixed(2)
     : pricing.value.basePrice;
 });
 
@@ -195,33 +217,44 @@ async function submitShipment() {
 
   try {
     const payload = {
-      sender: { name: userStore?.user?.fullName, email: userStore?.user?.email },
-      receiver: { name: receiverName.value, email: receiverEmail.value },
-      fromCity: fromCity.value,
-      toCity: sameCity.value ? fromCity.value : toCity.value,
+      sender: {
+        name: userStore?.user?.fullName,
+        email: userStore?.user?.email,
+        address: senderAddress.value,
+      },
+      receiver: {
+        name: receiverName.value,
+        email: receiverEmail.value,
+        address: receiverAddress.value,
+      },
       package: {
-        length: Number(length.value),
-        width: Number(width.value),
-        height: Number(height.value),
+        dimensions: {
+          length: Number(length.value),
+          width: Number(width.value),
+          height: Number(height.value),
+        },
         weight: Number(weight.value),
+        senderCity: senderCity.value,
+        receiverCity: receiverCity.value,
         description: packageDescription.value,
       },
       insurance: insuranceSelected.value,
       cost: cost.value,
     };
 
-    const shipment = await shipmentStore.createShipment(payload);
+    shipment.value = await shipmentStore.createShipment(payload);
 
     if (shipment) {
-      router.push(`/staff/shipments/${shipment.id}`);
+      sendStatus.value = "success";
+      clearInput();
     }
   } catch (error) {
+    sendStatus.value = "error";
     console.error("Create shipment failed:", error);
   } finally {
     loading.value = false;
   }
 }
-const confirmPrice = ref(false);
 
 function openPriceConfirmation() {
   confirmPrice.value = true;
@@ -229,8 +262,38 @@ function openPriceConfirmation() {
 
 async function confirmAndSubmit() {
   confirmPrice.value = false;
+  loading.value = true;
   await submitShipment();
+  loading.value = false;
 }
+
+function copyTrackingNumber() {
+  navigator.clipboard.writeText(shipment.value.shipment.trackingNumber);
+  copyText.value = "mdi-clipboard-check-outline";
+  setTimeout(() => {
+    copyText.value = "mdi-clipboard-outline";
+  }, 2000);
+}
+
+function clearInput() {
+  senderAddress.value = "";
+  receiverName.value = "";
+  receiverEmail.value = "";
+  receiverAddress.value = "";
+  senderCity.value = "";
+  receiverCity.value = "";
+  length.value = null;
+  width.value = null;
+  height.value = null;
+  weight.value = null;
+  packageDescription.value = "";
+  insuranceSelected.value = false;
+}
+
+//watchers
+watch(sameCity, () => {
+  receiverCity.value = sameCity.value ? senderCity.value : receiverCity.value;
+});
 </script>
 
 <style scoped>

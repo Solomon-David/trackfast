@@ -1,9 +1,8 @@
 // backend/utils/sendEmail.js
 import nodemailer from "nodemailer";
 
- const sendEmail = async ({ to, subject, text, html }) => {
-  console.log(process.env.EMAIL_USER);
-  console.log(process.env.EMAIL_PASS);
+ const sendEmail = async ({ to, subject, text, html, attachments }) => {
+
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -21,6 +20,7 @@ import nodemailer from "nodemailer";
       subject,
       text,
       html,
+      attachments: attachments ?? null
     });
 
     console.log("Email sent:", info.messageId);
