@@ -237,9 +237,9 @@ export const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user)
-      return res.status(404).json({ message: "User not found." });
-
-    const resetToken = crypto.randomBytes(32).toString("hex");
+      return res.status(404).json({ message: "User not found.", success: false });
+    //reset token that is 6 characters long
+    const resetToken = crypto.randomBytes(3).toString("hex").toUpperCase();
 
     user.resetToken = resetToken;
     user.resetTokenExpires = Date.now() + 15 * 60 * 1000;
@@ -251,11 +251,11 @@ export const forgotPassword = async (req, res) => {
       html: `<p>Your password reset token: <b>${resetToken}</b></p>`
     });
 
-    return res.json({ message: "Password reset token sent." });
+    return res.json({ message: "Password reset token sent.", success: true });
 
   } catch (error) {
     console.error("Forgot Password Error:", error);
-    return res.status(500).json({ message: "Server error." });
+    return res.status(500).json({ message: "Server error.", success: false });
   }
 };
 
@@ -264,29 +264,59 @@ export const forgotPassword = async (req, res) => {
 // ===========================
 export const resetPassword = async (req, res) => {
   try {
-    const { email, token, newPassword } = req.body;
+    const { email, token, password } = req.body;
 
     const user = await User.findOne({ email });
 
     if (!user || user.resetToken !== token)
-      return res.status(400).json({ message: "Invalid token." });
+      return res.status(409).json({ message: "Invalid token." });
 
     if (user.resetTokenExpires < Date.now())
-      return res.status(400).json({ message: "Token expired." });
+      return res.status(409).json({ message: "Token expired." });
 
-    user.password = await hashPassword(newPassword);
+    user.password = await hashPassword(password);
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
 
     await user.save();
 
-    return res.json({ message: "Password updated successfully." });
+    return res.status(200).json({ message: "Password updated successfully." });
 
   } catch (error) {
     console.error("Reset Password Error:", error);
     return res.status(500).json({ message: "Server error." });
   }
 };
+
+// ===========================
+// Change Password
+// ===========================
+export const changePassword = async (req, res) => {
+  try {
+     const { email, password, newPassword } = req.body;
+     const user = await User.findOne({email});
+     const passwordMatch = await comparePassword(password, user.password);
+     if (passwordMatch) {
+      user.password = await hashPassword(newPassword);
+      await user.save();
+      await sendEmail({
+        to: email,
+        subject: "Password Changed",
+        html: `
+        <h2>Password Successfully Changed</h2>
+        <p>Dear ${user.fullName},</p>
+        <p>We wanted to inform you that your account password has been successfully changed. If you did not initiate this change, please contact our support team immediately.</p>
+        <p>Best regards,<br/>Track Fast Logistics Team</p>`
+      });
+      return res.status(200).json({message: "Password successfully changed."});
+     }
+     else {
+      return res.status(409).json({message: "Incorrect password."});
+     }
+  } catch (error) {
+    return res.status(500).json({ message: "Server error occurred."});
+  }
+}
 
 // ===========================
 // Get Profile

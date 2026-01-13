@@ -21,6 +21,7 @@
                 type="password"
                 @keypress.enter="handleLogin"
                 required
+                icon=""
               ></v-text-field>
             </v-form>
           </v-card-text>
@@ -32,6 +33,11 @@
             @click="handleLogin"
             >Login</v-btn
           >
+          <div class="forgotpass mt-4 mb-2">
+            <a href="./forgot-password" class="text-blue-grey"
+              >Forgotten password? Click here.</a
+            >
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -63,3 +69,9 @@ const handleLogin = async () => {
   }
 };
 </script>
+
+<style scoped>
+.forgotpass {
+  text-align: center;
+}
+</style>

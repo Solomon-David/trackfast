@@ -18,8 +18,14 @@ import { ensureAdmin } from "./controllers/UserController.js";
 //pricing model
 import Pricing from "./models/PricingSettings.js";
 
-// Load environment variables
+//configure
 dotenv.config();
+
+// Load environment variables
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
+
+console.log("mongo", MONGO_URI);
 
 // Initialize Express app
 const app = express();
@@ -64,8 +70,7 @@ app.use((err, req, res, next) => {
 // ==========================
 // MongoDB Connection
 // ==========================
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
+
 
 mongoose
   .connect(MONGO_URI)

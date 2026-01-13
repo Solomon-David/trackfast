@@ -14,15 +14,7 @@ import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import VerifyAccountView from '@/views/auth/VerifyAccountView.vue'
 
-// User Views
-import UserDashboardView from '@/views/user/UserDashboardView.vue'
-import UserProfileView from '@/views/user/UserProfileView.vue'
-import UserMyShipmentsView from '@/views/user/UserMyShipmentsView.vue'
-import UserMyTransactionsView from '@/views/user/UserMyTransactionsView.vue'
-
 // Shipment Views
-import CreateShipmentView from '@/views/shipment/CreateShipmentView.vue'
-import TrackShipmentView from '@/views/shipment/TrackShipmentView.vue'
 import ShipmentDetailsView from '@/views/shipment/ShipmentDetailsView.vue'
 
 // Staff Views
@@ -47,17 +39,24 @@ const router = createRouter({
         { path: '', component: HomeView },
         { path: 'about', component: AboutView },
         { path: 'contact', component: ContactView },
-        { path: '/track/:trackingNumber', component: TrackShipmentView },
-        { path: '/track/', component: TrackShipmentView }
+        { path: '/track/:trackingNumber', component: () => import("@/views/shipment/TrackShipmentView.vue") },
+        { path: '/track/', component: () => import("@/views/shipment/TrackShipmentView.vue") },
+        
       ]
     },
 
     // Auth routes
-    { path: '/auth/login', component: LoginView, meta: { guestOnly: true } },
-    { path: '/auth/register', component: RegisterView, meta: { guestOnly: true } },
-    { path: '/auth/verify-account', component: VerifyAccountView, meta: { guestOnly: true } },
-
-    // User routes
+    { path: "/auth",
+      children: [
+          { path: 'login', component: LoginView, meta: { guestOnly: true } },
+          { path: 'register', component: RegisterView, meta: { guestOnly: true } },
+          { path: 'verify-account', component: VerifyAccountView, meta: { guestOnly: true } },
+          { path: "forgot-password", component: () => import("@/views/auth/ForgotPasswordView.vue")},
+          { path: "reset-password", component: () => import("@/views/auth/ResetPasswordView.vue")}
+        ] 
+      },
+      
+      // User routes
     {
       path: '/user',
       component: MainLayout,
@@ -66,7 +65,8 @@ const router = createRouter({
         { path: 'dashboard', component: ()=> import('@/views/user/UserDashboardView.vue') },
         { path: 'profile', component: ()=> import('@/views/user/UserProfileView.vue') },
         { path: 'shipments', component: ()=> import('@/views/user/UserMyShipmentsView.vue') },
-        { path: 'transactions', component: ()=> import('@/views/user/UserMyTransactionsView.vue') }
+        { path: 'transactions', component: ()=> import('@/views/user/UserMyTransactionsView.vue') },
+        { path: "change-password", component: () => import("@/views/auth/ChangePasswordView.vue")},
       ]
     },
 
@@ -75,8 +75,8 @@ const router = createRouter({
       path: '/shipments',
       component: MainLayout,
       children: [
-        { path: 'create', component: CreateShipmentView, meta: { requiresAuth: true } },
-        { path: 'details/:trackingNumber', component: ShipmentDetailsView, meta: { requiresAuth: true } },
+        { path: 'create', component: ()=> import("@/views/shipment/CreateShipmentView.vue"), meta: { requiresAuth: true } },
+        { path: 'details/:trackingNumber', component: ()=> import('@/views/shipment/ShipmentDetailsView.vue'), meta: { requiresAuth: true } },
         { path: 'update-status', component: ()=>import('@/views/staff/StaffUpdateShipmentStatusView.vue'), meta: { requiresAuth: true, staffOnly: true } },
         { path: 'update-status/:trackingNumber', component: ()=>import('@/views/staff/StaffUpdateShipmentStatusView.vue'), meta: { requiresAuth: true, staffOnly: true } },
       ]

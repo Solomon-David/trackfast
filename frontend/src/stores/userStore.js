@@ -120,12 +120,40 @@ export const useUserStore = defineStore('userStore', () => {
   }
 
   //Contact
+  // TODO: fix the contact us section
   const contactUs = async (fullName, email, message) => {
     loadUserFromStorage();
     const name = fullName || user.value.fullName;
     const mail = email || user.value.email;
-    await axios.post('/user/contactUs', { fullName: name, mail:email, message});
+    await axios.post('/user/contact', { fullName: name, mail:email, message});
     return true;
+  }
+
+  const requestResetCode = async (email) => {
+    
+    let res = await axios.post("/auth/forgot-password", { email });
+    console.log(res.data);
+    return res.data;
+  }
+
+  const resetPassword = async (email, token, password) => {
+    try {
+      
+      let res = await axios.post("/auth/reset-password", {email, token, password});
+      return res;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  const changePassword = async (password, newPassword) => {
+    loadUserFromStorage();
+    try {
+      const res = await axios.post('/users/change-password', { email: user.value.email, password, newPassword });
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
   }
 
   return {
@@ -138,6 +166,9 @@ export const useUserStore = defineStore('userStore', () => {
     login,
     register,
     logout,
-    loadUserFromStorage
+    loadUserFromStorage,
+    requestResetCode,
+    resetPassword,
+    changePassword,
   }
 })
