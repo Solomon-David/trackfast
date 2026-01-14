@@ -290,14 +290,11 @@ async function calculateCost() {
 </template>
 
 <style scoped>
-.bg-logo {
-}
-
 .hero-section {
-  background: linear-gradient(rgba(48, 48, 48, 0.6), rgba(48, 48, 48, 0.6)),
+  background: linear-gradient(rgba(48, 48, 48, 0.8), rgba(48, 48, 48, 0.8)),
     url("./../assets/logo-noname.png");
   background-size: cover;
-  background-position: center;
+  background-position: center 90%;
   padding: 140px 20px;
   color: white;
 }

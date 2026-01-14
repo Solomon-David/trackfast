@@ -38,17 +38,18 @@ export const ensureAdmin = async() => {
   export const contactUs = async (req,res) => {
     try {
       const {fullName, email, message} = req.body;
-      await sendEmail({
-      to: process.env.EMAIL_USER,
-      subject: "User contact",
-      html: `<h2>Message from ${fullName}</h2>
-            <h3>Email: ${email}</h3>
-            <p><b>Message</b>: ${message}</p>`
-    });
-    return true;
+        await sendEmail({
+        to: process.env.EMAIL_USER,
+        subject: "User feedback",
+        html: `<h3>Feedback from ${fullName}</h3>
+              <h3>Email: ${email}</h3>
+              <p><b>Message</b>: ${message}</p>`
+      });
+      return res.status(200).json({message: true});
     }catch(error){
-    console.error("Register Error:", error);
-    return false;
+      console.error("Error sending user feedback:", error);
+      return res.status(500).json({message: false});
+      return false;
     }
   }
 

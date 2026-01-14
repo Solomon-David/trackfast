@@ -12,7 +12,7 @@ router.post("/login", UserController.login);
 // Protected routes
 router.get("/profile", protect, UserController.getProfile);
 
-router.post("/contact", protect, UserController.contactUs);
+router.post("/contact", UserController.contactUs);
 
 router.post("/change-password", protect, UserController.changePassword);
 

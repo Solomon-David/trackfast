@@ -38,7 +38,7 @@ app.use(express.json({limit: "10mb"}));
 app.use(express.urlencoded({ extended: true }));
 
 // ==========================
-// Routes
+// Routes  
 // ==========================
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);

@@ -115,18 +115,19 @@ export const useUserStore = defineStore('userStore', () => {
   // LOAD AUTH ON APP START
   // ---------------------------
   const loadUserFromStorage = () => {
-    user.value = safeLoad('user')
-    token.value = safeLoad('token', false)
+    user.value = safeLoad('user');
+    token.value = safeLoad('token', false);
   }
 
   //Contact
   // TODO: fix the contact us section
   const contactUs = async (fullName, email, message) => {
     loadUserFromStorage();
-    const name = fullName || user.value.fullName;
-    const mail = email || user.value.email;
-    await axios.post('/user/contact', { fullName: name, mail:email, message});
-    return true;
+    const name =  user.value?.fullName || fullName;
+    const mail = user.value?.email || email;
+    let response = await axios.post('/users/contact', { fullName: name, email: mail, message});
+    console.log("response: ",  response.data);
+    return response.data.message;
   }
 
   const requestResetCode = async (email) => {
@@ -167,6 +168,7 @@ export const useUserStore = defineStore('userStore', () => {
     register,
     logout,
     loadUserFromStorage,
+    contactUs,
     requestResetCode,
     resetPassword,
     changePassword,

@@ -4,7 +4,6 @@
     <v-navigation-drawer
       v-model="drawer"
       :permanent="!isMobile"
-      temporary
       app
       class="grey lighten-4"
     >
