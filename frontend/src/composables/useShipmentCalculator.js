@@ -1,22 +1,26 @@
-import { ref } from "vue";
 import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
+import { estimateDistance } from "@/utils/radarInstance";
 
 export function useShipmentCalculator() {
   const pricingStore = usePricingSettingsStore();
-  const calculatedCost = ref(0);
 
   // -----------------------------------------
   // Distance Calculation (replace with API later)
   // -----------------------------------------
-  async function getDistanceKm(senderCity, receiverCity) {
-    if (!senderCity || !receiverCity) return 0;
+  async function getDistanceKm(senderAddress, receiverAddress) {
+    
+    if (!(senderAddress && receiverAddress)) return 0;
 
-    if (senderCity.trim().toLowerCase() === receiverCity.trim().toLowerCase()) {
-      return 1; // same city
+    if (senderAddress === receiverAddress) {
+      return "Yes"; // same city
     }
-
     // TODO: Replace with Distance.to API
-    return 12; // mock for now
+    let distanceKm = await estimateDistance({
+      sender:senderAddress, receiver:receiverAddress
+    });
+    distanceKm = Math.ceil(distanceKm); // convert to KM and round up
+
+    return distanceKm
   }
 
   // -----------------------------------------
@@ -27,35 +31,38 @@ export function useShipmentCalculator() {
     width,
     height,
     weight,
-    senderCity,
-    receiverCity,
+    senderAddress,
+    receiverAddress
   }) {
     const settings = pricingStore.settings || {};
 
-    const basePrice = settings.basePrice ?? 1000;
-    const pricePerKg = settings.pricePerKg ?? 250;
-    const pricePerKm = settings.pricePerKm ?? 30;
-    const volumetricDivisor = settings.volumetricDivisor ?? 5000;
-    const minimumPrice = settings.minimumPrice ?? 1500;
+    let basePrice = settings.basePrice ?? 1000;
+    let pricePerKg = settings.pricePerKg ?? 250;
+    let pricePerKm = settings.pricePerKm ?? 30;
+    let volumetricDivisor = settings.volumetricDivisor ?? 5000;
+    let minimumPrice = settings.minimumPrice ?? 1500;
+    let distanceKm = 0
+    let cost = 0;
+    distanceKm = await getDistanceKm(senderAddress, receiverAddress);
+    
 
-    const distanceKm = await getDistanceKm(senderCity, receiverCity);
+    let volumetricWeight = (length * width * height) / volumetricDivisor;
+    let chargeableWeight = Math.max(weight, volumetricWeight);
 
-    const volumetricWeight = (length * width * height) / volumetricDivisor;
-    const chargeableWeight = Math.max(weight, volumetricWeight);
+    cost = basePrice +
+      (chargeableWeight * pricePerKg) +
+      (distanceKm * pricePerKm);
 
-    let cost =
-      basePrice +
-      chargeableWeight * pricePerKg +
-      distanceKm * pricePerKm;
+    console.log("Calculated Cost before minimum check: ", cost);
 
     if (cost < minimumPrice) cost = minimumPrice;
 
-    calculatedCost.value = Math.round(cost);
-    return calculatedCost.value;
+    cost = Math.round(cost);
+    return cost;
   }
+  
 
   return {
-    calculatedCost,
     calculateCost,
   };
 }

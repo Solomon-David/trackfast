@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import AboutView from "@/views/AboutView.vue";
 import ContactView from "@/views/ContactView.vue";
+import ShippingCalculator from "@/components/layout/ShippingCalculator.vue"
 
 const router = useRouter();
 const trackingNumber = ref("");
@@ -13,67 +14,8 @@ const trackNow = () => {
 };
 
 const ctaMode = ref("track");
-import { useShipmentCalculator } from "@/composables/useShipmentCalculator";
-
 const loading = ref(false);
 
-// Cities
-const fromCity = ref("");
-const destinationCity = ref("");
-const sameCity = ref(false);
-
-// Dimensional fields
-const length = ref("");
-const width = ref("");
-const height = ref("");
-
-// Weight
-const weight = ref("");
-
-// Result
-const estimatedCost = ref(null);
-
-// Auto-calculated volume
-const volume = computed(() => {
-  const L = Number(length.value) || 0;
-  const W = Number(width.value) || 0;
-  const H = Number(height.value) || 0;
-  return L * W * H;
-});
-
-// Use the composable
-const {
-  calculatedCost,
-  calculateCost: composableCalculateCost,
-} = useShipmentCalculator();
-
-// Calculate cost
-async function calculateCost() {
-  if (!sameCity.value && (!fromCity.value || !destinationCity.value)) {
-    estimatedCost.value = "Missing city fields";
-    return;
-  }
-
-  loading.value = true;
-
-  try {
-    const cost = await composableCalculateCost({
-      length: Number(length.value),
-      width: Number(width.value),
-      height: Number(height.value),
-      weight: Number(weight.value),
-      senderCity: fromCity.value,
-      receiverCity: sameCity.value ? fromCity.value : destinationCity.value,
-    });
-
-    estimatedCost.value = cost;
-  } catch (err) {
-    console.error("Error calculating shipment cost:", err);
-    estimatedCost.value = "Error calculating cost";
-  } finally {
-    loading.value = false;
-  }
-}
 </script>
 
 <template>
@@ -108,78 +50,7 @@ async function calculateCost() {
 
         <!-- CALCULATOR MODE -->
         <template v-else>
-          <!-- Shipping Calculator -->
-          <h3 class="text-h6 font-weight-bold mb-4">Shipment Cost Calculator</h3>
-
-          <!-- From City -->
-          <v-text-field
-            v-model="fromCity"
-            label="From (City)"
-            variant="outlined"
-            clearable
-          />
-
-          <!-- Same City Checkbox -->
-          <v-checkbox
-            v-model="sameCity"
-            label="Same City Delivery"
-            class="mt-n3"
-          ></v-checkbox>
-
-          <!-- Destination City -->
-          <v-text-field
-            v-model="destinationCity"
-            label="Destination (City)"
-            variant="outlined"
-            clearable
-            :disabled="sameCity"
-          />
-          <span> Package Dimensions</span>
-          <!-- Dimensional Fields -->
-          <div class="d-flex ga-3 mt-3">
-            <v-text-field
-              v-model="length"
-              label="Length (cm)"
-              type="number"
-              variant="outlined"
-            />
-            <v-text-field
-              v-model="width"
-              label="Width (cm)"
-              type="number"
-              variant="outlined"
-            />
-            <v-text-field
-              v-model="height"
-              label="Height (cm)"
-              type="number"
-              variant="outlined"
-            />
-          </div>
-
-          <!-- Weight -->
-          <v-text-field
-            v-model="weight"
-            label="Weight (kg)"
-            variant="outlined"
-            type="number"
-          />
-          <!-- Calculate -->
-          <v-btn
-            block
-            color="primary"
-            class="mt-3"
-            :loading="loading"
-            @click="calculateCost"
-          >
-            Calculate Cost
-          </v-btn>
-
-          <!-- Result -->
-          <div v-if="estimatedCost" class="mt-4 text-center">
-            <h3 class="text-h6 font-weight-bold">Estimated Cost:</h3>
-            <p class="text-h6 mt-1">${{ estimatedCost }}</p>
-          </div>
+          <ShippingCalculator/>
         </template>
       </v-card>
 

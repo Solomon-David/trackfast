@@ -5,7 +5,7 @@
       v-model="drawer"
       :permanent="!isMobile"
       app
-      class="grey lighten-4"
+      class="grey lighten-4 "
     >
       <v-list>
         <!-- Dashboard -->

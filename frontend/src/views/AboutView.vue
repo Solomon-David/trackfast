@@ -1,5 +1,6 @@
 <template>
-  <v-container class="py-10">
+  <v-container class="py-10 ">
+  <section>
     <!-- Header Section -->
     <v-row justify="center">
       <v-col cols="12" md="8" class="text-center">
@@ -109,6 +110,7 @@
         </p>
       </v-col>
     </v-row>
+    </section>
   </v-container>
 </template>
 

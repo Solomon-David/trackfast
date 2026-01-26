@@ -33,7 +33,6 @@
 import { computed, defineProps, inject } from "vue";
 import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
-import logo from "@/assets/logo.jpg";
 
 const toggleDrawer = inject("toggleDrawer");
 

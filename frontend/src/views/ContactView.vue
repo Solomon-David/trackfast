@@ -1,11 +1,12 @@
 <template>
-  <v-container>
+  <v-container  >
+  <section>
     <h1 class="text-center mb-2">Contact Us</h1>
     <p class="text-body-1 text-center mb-4">We would love to hear from you</p>
     <v-form @submit.prevent="submitContact">
-      <template v-if="isLoggedIn">
-        <p class="text-h6">Name: {{ name }}</p>
-        <p class="text-h6">Email: {{ email }}</p>
+      <template v-if="isLoggedIn"><br>
+        <p><span class="text-normal">Name:</span> <span class="text-h6">{{ name }}</span></p>
+        <p><span class="text-normal">Email:</span> <span class="text-h6">{{ email }}</span></p>
       </template>
       <template v-else>
         <v-text-field v-model="name" label="Name" required />
@@ -17,6 +18,7 @@
     <v-alert :type="status ? 'success' : 'error'" v-if="show">
       {{ status ? "Sent! Thank you for your feedback!" : "Sorry, an error occured!" }}
     </v-alert>
+    </section>
   </v-container>
 </template>
 

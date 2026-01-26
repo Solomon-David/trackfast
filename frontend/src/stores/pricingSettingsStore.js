@@ -19,11 +19,6 @@ export const usePricingSettingsStore = defineStore("pricingSettingsStore", () =>
     }
   };
 
-  const calculateCost = (base, length, width, height, weight, insurance) =>{
-    let result = base + ((length * width * height)/settings.value.volumetricDivisor) + (weight * settings.value.pricePerKg) + (insurance ? settings.value.insuranceFee : 0);
-    console.log(result);
-    return result.toFixed(2);
-  }
 
   const updateSettings = async (updatedData) => {
     loading.value = true;

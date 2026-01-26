@@ -1,4 +1,5 @@
 {
     "vue3snippets.enable-compile-vue-file-on-did-save-code": true,
-    "editor.pasteAs.enabled": false
+    "editor.pasteAs.enabled": false,
+    "postman.settings.dotenv-detection-notification-visibility": false
 }

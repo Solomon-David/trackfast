@@ -193,7 +193,7 @@ watch(confirmPrice, async (newVal) => {
   pricing.value = usePricingSettingsStore().settings;
   if (!length.value || !width.value || !height.value || !weight.value) return;
 
-  const result = usePricingSettingsStore().calculateCost(
+  cost.value = usePricingSettingsStore().calculateCost(
     base.value,
     length.value,
     width.value,
@@ -201,8 +201,6 @@ watch(confirmPrice, async (newVal) => {
     weight.value,
     insuranceSelected.value
   );
-
-  cost.value = Number(result).toFixed(2);
 });
 
 watch(sameCity, () => {
