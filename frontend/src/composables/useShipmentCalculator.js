@@ -31,6 +31,7 @@ export function useShipmentCalculator() {
     width,
     height,
     weight,
+    withInsurance,
     senderAddress,
     receiverAddress
   }) {

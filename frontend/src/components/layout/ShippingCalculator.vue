@@ -63,6 +63,7 @@ async function calculateCost() {
       width: width.value,
       height: height.value,
       weight: weight.value,
+      withInsurance: false,
       senderAddress: senderAddress.value,
       receiverAddress: receiverAddress.value,
     });

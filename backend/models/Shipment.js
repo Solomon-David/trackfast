@@ -30,8 +30,17 @@ const shipmentSchema = new mongoose.Schema(
         height: Number,
       },
       description: String,
+      senderAddress: String,
       senderCity: String,
+      senderCountry: String,
+      receiverAddress: String,
       receiverCity: String,
+      receiverCountry: String,
+    },
+
+    withInsurance: {
+      type: Boolean,
+      default: false
     },
 
     status: {

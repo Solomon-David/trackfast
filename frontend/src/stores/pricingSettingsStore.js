@@ -39,6 +39,5 @@ export const usePricingSettingsStore = defineStore("pricingSettingsStore", () =>
     loading,
     fetchSettings,
     updateSettings, 
-    calculateCost
   };
 });

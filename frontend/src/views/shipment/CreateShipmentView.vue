@@ -3,50 +3,126 @@
     <h1>Create Shipment</h1>
 
     <v-form @submit.prevent="submitShipment">
-      <v-text-field v-model="senderName" label="Sender's Name" required disabled />
+      <v-text-field v-model="senderName" label="Sender's Name" required readonly />
 
       <v-text-field
         v-model="senderEmail"
         label="Sender's Email"
         type="email"
         required
-        disabled
+        readonly
       />
 
       <v-row>
-        <v-col cols="7">
+        <v-col>
           <v-text-field v-model="senderAddress" label="Sender's Address" required />
         </v-col>
-        <v-col cols="5">
+
+        <v-col cols="max-width">
           <v-text-field
             v-model="senderCity"
             label="Sender's City"
+            @blur="
+              () => {
+                senderCountry = '';
+              }
+            "
             required
             :disabled="sameCity"
           />
         </v-col>
+        <v-col>
+          <v-text-field
+            v-model="senderCountry"
+            label="Sender's Country"
+            required
+            @update:focused="
+              () => {
+                senderCountryLoading = false;
+                senderCountryState = 'empty';
+              }
+            "
+            :loading="senderCountryLoading"
+            :append-inner-icon="
+              senderCountryState == 'resolved'
+                ? 'mdi-check'
+                : senderCountryState == 'error'
+                ? 'mdi-alert'
+                : null
+            "
+            :icon-color="
+              senderCountryState == 'resolved'
+                ? 'green'
+                : senderCountryState == 'error'
+                ? 'red'
+                : null
+            "
+            @blur="getSenderLocation"
+          />
+        </v-col>
       </v-row>
 
-      <v-text-field v-model="receiverName" label="Receiver's Name" required />
+      <v-text-field
+        v-model="receiverName"
+        label="Receiver's Name"
+        required
+        validate-on-blur
+      />
 
       <v-text-field
         v-model="receiverEmail"
         label="Receiver's Email"
         type="email"
+        :rules="[rules.required, rules.isEmail]"
+        validate-on-blur
         required
       />
 
       <!-- Cities -->
       <v-row>
-        <v-col cols="7">
+        <v-col>
           <v-text-field v-model="receiverAddress" label="Receiver's Address" required />
         </v-col>
-        <v-col cols="5">
+        <v-col cols="4">
           <v-text-field
             v-model="receiverCity"
             label="Receiver's City"
+            @blur="
+              () => {
+                receiverCountry = '';
+              }
+            "
             required
             :disabled="sameCity"
+          />
+        </v-col>
+        <v-col cols="4">
+          <v-text-field
+            v-model="receiverCountry"
+            label="Receiver's Country"
+            required
+            @update:focused="
+              () => {
+                receiverCountryLoading = false;
+                receiverCountryState = 'empty';
+              }
+            "
+            :loading="receiverCountryLoading"
+            :append-inner-icon="
+              receiverCountryState == 'resolved'
+                ? 'mdi-check'
+                : receiverCountryState == 'error'
+                ? 'mdi-alert'
+                : null
+            "
+            :icon-color="
+              receiverCountryState == 'resolved'
+                ? 'green'
+                : receiverCountryState == 'error'
+                ? 'red'
+                : null
+            "
+            @blur="getReceiverLocation"
           />
         </v-col>
       </v-row>
@@ -136,40 +212,33 @@
 
 <script setup>
 import { ref, watch, onMounted, h } from "vue";
-import { useRouter } from "vue-router";
 import { useShipmentStore } from "@/stores/shipmentStore";
 import { useUserStore } from "@/stores/userStore";
 import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
+import rules from "@/utils/formRules.js";
 
-const router = useRouter();
 const shipmentStore = useShipmentStore();
 const userStore = useUserStore();
 const pricing = ref(null);
 const base = ref(0);
 
-onMounted(async () => {
-  await usePricingSettingsStore().fetchSettings();
-  pricing.value = usePricingSettingsStore().settings;
-  base.value = sameCity.value ? pricing.value.basePrice / 3 : pricing.value.basePrice;
-
-  if (userStore.user) {
-    senderName.value = userStore.user.fullName || "";
-    senderEmail.value = userStore.user.email || "";
-  }
-});
-
 const loading = ref(false);
 
 // Form fields
-const senderName = ref("");
-const senderEmail = ref("");
+const senderName = ref(userStore?.user?.fullName || "");
+const senderEmail = ref(userStore?.user?.email || "");
 const senderAddress = ref("");
 const receiverName = ref("");
 const receiverEmail = ref("");
 const receiverAddress = ref("");
 const senderCity = ref("");
-const sameCity = ref(false);
 const receiverCity = ref("");
+const senderCountry = ref("");
+const receiverCountry = ref("");
+const sameCity = ref(false);
+
+const senderLocation = ref("");
+const receiverLocation = ref("");
 
 const length = ref(20);
 const width = ref(30);
@@ -184,7 +253,57 @@ const insuranceSelected = ref(true);
 const sendStatus = ref("");
 const shipment = ref(null);
 
+const receiverCountryLoading = ref(false);
+const senderCountryLoading = ref(false);
+
+const receiverCountryState = ref("empty");
+const senderCountryState = ref("empty");
+
 const copyText = ref("mdi-clipboard-outline");
+
+// Setting the receive location to match sender location if "Same City" is selected.
+receiverCity.value = sameCity.value ? senderCity.value : receiverCity.value;
+receiverCountry.value = sameCity.value ? senderCountry.value : receiverCountry.value;
+
+// Fetching sender location
+async function getSenderLocation() {
+  try {
+    if (senderCity.value && senderCountry.value) {
+      senderCountryLoading.value = true;
+      senderLocation.value = await getAddress(senderCity.value, senderCountry.value);
+      senderCountryState.value = "resolved";
+      console.log("Sender Address: ", `${senderCity.value}, ${senderCountry.value}`);
+    }
+  } catch (error) {
+    senderCountryState.value = "error";
+    console.log(`Country fetch error: ${error}`);
+  } finally {
+    senderCountryLoading.value = false;
+  }
+}
+
+// Fetching receiver address
+async function getReceiverLocation() {
+  try {
+    if (receiverCity.value && receiverCountry.value) {
+      receiverCountryLoading.value = true;
+      receiverLocation.value = await getAddress(
+        receiverCity.value,
+        receiverCountry.value
+      );
+      receiverCountryState.value = "resolved";
+      console.log(
+        "Receiver Address: ",
+        `${receiverCity.value}, ${receiverCountry.value}`
+      );
+    }
+  } catch (error) {
+    receiverCountryState.value = "error";
+    console.log(`Country fetch error: ${error}`);
+  } finally {
+    receiverCountryLoading.value = false;
+  }
+}
 
 // Auto recalc cost whenever inputs change
 
@@ -193,14 +312,14 @@ watch(confirmPrice, async (newVal) => {
   pricing.value = usePricingSettingsStore().settings;
   if (!length.value || !width.value || !height.value || !weight.value) return;
 
-  cost.value = usePricingSettingsStore().calculateCost(
-    base.value,
-    length.value,
-    width.value,
-    height.value,
-    weight.value,
-    insuranceSelected.value
-  );
+  cost.value = await useShipmentStore().calculateCost({
+    length: length.value,
+    width: width.value,
+    height: height.value,
+    weight: weight.value,
+    withInsurance: insuranceSelected,
+    senderAddress: senderLocation.value,
+  });
 });
 
 watch(sameCity, () => {
@@ -232,8 +351,12 @@ async function submitShipment() {
           height: Number(height.value),
         },
         weight: Number(weight.value),
+        senderAddress: senderAddress.value,
+        receiverAddress: receiverAddress.value,
         senderCity: senderCity.value,
         receiverCity: receiverCity.value,
+        senderCountry: senderCountry.value,
+        receiverCountry: receiverCountry,
         description: packageDescription.value,
       },
       insurance: insuranceSelected.value,
@@ -291,6 +414,17 @@ function clearInput() {
 //watchers
 watch(sameCity, () => {
   receiverCity.value = sameCity.value ? senderCity.value : receiverCity.value;
+});
+
+onMounted(async () => {
+  await usePricingSettingsStore().fetchSettings();
+  pricing.value = usePricingSettingsStore().settings;
+  base.value = sameCity.value ? pricing.value.basePrice / 3 : pricing.value.basePrice;
+
+  if (userStore?.user) {
+    senderName.value = userStore?.user?.fullName || "";
+    senderEmail.value = userStore?.user?.email || "";
+  }
 });
 </script>
 

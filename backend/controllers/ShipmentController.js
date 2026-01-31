@@ -10,20 +10,7 @@ import sendEmail from '../utils/sendEmail.js';
 // Create a new shipment
 export const createShipment = async (req, res) => {
   try {
-    const {
-      senderName,
-      senderAddress,
-      senderEmail,
-      receiverName,
-      receiverAddress,
-      receiverEmail,
-      weight,
-      dimensionLength,
-      dimensionWidth,
-      dimensionHeight,
-      description,
-      amount
-    } = req.body;
+    
     const trackingNumber = generateTrackingNumber();
 
     // Build shipment payload matching the Shipment schema
@@ -34,7 +21,7 @@ export const createShipment = async (req, res) => {
       customer: req.user?.id,
       //sender subdocument 
       ...req.body,
-      currentLocation: req.body.package.senderCity
+      currentLocation: `${req.body.package.senderCity}, ${req.body.package.senderCountry}`
     };
 
     const shipment = await Shipment.create(shipmentPayload);
