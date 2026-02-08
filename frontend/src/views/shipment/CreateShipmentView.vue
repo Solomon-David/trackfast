@@ -181,19 +181,19 @@
           <v-divider class="my-2" />
           <h1 class="text-h5 font-weight-bold mb-4">${{ cost }}</h1>
 
-          <v-btn block color="primary" class="mb-2" @click="confirmAndSubmit"
+          <v-btn
+            block
+            color="primary"
+            class="mb-2"
+            @click="submitShipment"
+            :loading="shipmentLoading"
             >Accept & Create Shipment</v-btn
           >
           <v-btn block variant="tonal" @click="confirmPrice = false">Cancel</v-btn>
         </v-card>
       </v-dialog>
 
-      <v-btn
-        color="primary"
-        class="mt-4 mb-4"
-        :loading="loading"
-        @click="openPriceConfirmation"
-      >
+      <v-btn color="primary" class="mt-4 mb-4" @click="openPriceConfirmation">
         Get Cost
       </v-btn>
       <v-alert v-if="sendStatus == 'success'" type="success">
@@ -211,30 +211,35 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, h } from "vue";
-import { useShipmentStore } from "@/stores/shipmentStore";
+import { ref, watch, onMounted } from "vue";
+import { useShipmentCalculator } from "@/composables/useShipmentCalculator.js";
+import { useShipmentStore } from "@/stores/shipmentStore.js";
 import { useUserStore } from "@/stores/userStore";
 import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
+import { getAddress } from "@/utils/radarInstance.js";
 import rules from "@/utils/formRules.js";
 
+const calculateCost = useShipmentCalculator().calculateCost;
 const shipmentStore = useShipmentStore();
 const userStore = useUserStore();
 const pricing = ref(null);
 const base = ref(0);
 
 const loading = ref(false);
+const shipmentLoading = ref(false);
+const dialogLoader = ref(false);
 
 // Form fields
 const senderName = ref(userStore?.user?.fullName || "");
 const senderEmail = ref(userStore?.user?.email || "");
-const senderAddress = ref("");
-const receiverName = ref("");
-const receiverEmail = ref("");
-const receiverAddress = ref("");
-const senderCity = ref("");
-const receiverCity = ref("");
-const senderCountry = ref("");
-const receiverCountry = ref("");
+const senderAddress = ref("Ikpayongo");
+const receiverName = ref("Elizabeth");
+const receiverEmail = ref("sakesobia@gmail.com");
+const receiverAddress = ref("Woji");
+const senderCity = ref("Makurdi");
+const receiverCity = ref("Port Harcourt");
+const senderCountry = ref("Nigeria");
+const receiverCountry = ref("Nigeria");
 const sameCity = ref(false);
 
 const senderLocation = ref("");
@@ -247,7 +252,7 @@ const weight = ref(5);
 const confirmPrice = ref(false);
 const cost = ref(0);
 
-const packageDescription = ref("");
+const packageDescription = ref("Food");
 const insuranceSelected = ref(true);
 
 const sendStatus = ref("");
@@ -276,7 +281,7 @@ async function getSenderLocation() {
     }
   } catch (error) {
     senderCountryState.value = "error";
-    console.log(`Country fetch error: ${error}`);
+    console.error(`Country fetch error: ${error}`);
   } finally {
     senderCountryLoading.value = false;
   }
@@ -299,7 +304,7 @@ async function getReceiverLocation() {
     }
   } catch (error) {
     receiverCountryState.value = "error";
-    console.log(`Country fetch error: ${error}`);
+    console.error(`Country fetch error: ${error}`);
   } finally {
     receiverCountryLoading.value = false;
   }
@@ -307,19 +312,25 @@ async function getReceiverLocation() {
 
 // Auto recalc cost whenever inputs change
 
-watch(confirmPrice, async (newVal) => {
-  await usePricingSettingsStore().fetchSettings();
-  pricing.value = usePricingSettingsStore().settings;
-  if (!length.value || !width.value || !height.value || !weight.value) return;
+watch(dialogLoader, async (newVal) => {
+  if (dialogLoader.value) {
+    await usePricingSettingsStore().fetchSettings();
+    pricing.value = usePricingSettingsStore().settings;
+    if (!length.value || !width.value || !height.value || !weight.value) return;
 
-  cost.value = await useShipmentStore().calculateCost({
-    length: length.value,
-    width: width.value,
-    height: height.value,
-    weight: weight.value,
-    withInsurance: insuranceSelected,
-    senderAddress: senderLocation.value,
-  });
+    cost.value = await calculateCost({
+      length: length.value,
+      width: width.value,
+      height: height.value,
+      weight: weight.value,
+      withInsurance: insuranceSelected,
+      senderAddress: senderLocation.value,
+      receiverAddress: receiverLocation.value,
+    });
+
+    confirmPrice.value = true;
+    dialogLoader.value = false;
+  }
 });
 
 watch(sameCity, () => {
@@ -330,6 +341,7 @@ watch(sameCity, () => {
 
 // Submit shipment
 async function submitShipment() {
+  shipmentLoading.value = true;
   loading.value = true;
 
   try {
@@ -356,7 +368,7 @@ async function submitShipment() {
         senderCity: senderCity.value,
         receiverCity: receiverCity.value,
         senderCountry: senderCountry.value,
-        receiverCountry: receiverCountry,
+        receiverCountry: receiverCountry.value,
         description: packageDescription.value,
       },
       insurance: insuranceSelected.value,
@@ -373,19 +385,14 @@ async function submitShipment() {
     sendStatus.value = "error";
     console.error("Create shipment failed:", error);
   } finally {
+    confirmPrice.value = false;
+    shipmentLoading.value = false;
     loading.value = false;
   }
 }
 
 function openPriceConfirmation() {
-  confirmPrice.value = true;
-}
-
-async function confirmAndSubmit() {
-  confirmPrice.value = false;
-  loading.value = true;
-  await submitShipment();
-  loading.value = false;
+  dialogLoader.value = true;
 }
 
 function copyTrackingNumber() {
@@ -403,6 +410,8 @@ function clearInput() {
   receiverAddress.value = "";
   senderCity.value = "";
   receiverCity.value = "";
+  senderCountry.value = "";
+  receiverCountry.value = "";
   length.value = null;
   width.value = null;
   height.value = null;

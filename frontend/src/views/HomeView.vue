@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import AboutView from "@/views/AboutView.vue";
 import ContactView from "@/views/ContactView.vue";
-import ShippingCalculator from "@/components/layout/ShippingCalculator.vue"
+import ShippingCalculator from "@/components/layout/ShippingCalculator.vue";
 
 const router = useRouter();
 const trackingNumber = ref("");
@@ -15,7 +15,6 @@ const trackNow = () => {
 
 const ctaMode = ref("track");
 const loading = ref(false);
-
 </script>
 
 <template>
@@ -50,7 +49,7 @@ const loading = ref(false);
 
         <!-- CALCULATOR MODE -->
         <template v-else>
-          <ShippingCalculator/>
+          <ShippingCalculator />
         </template>
       </v-card>
 
@@ -73,7 +72,7 @@ const loading = ref(false);
               cycle
               height="100%"
               show-arrows="hover"
-              hide-delimiters="false"
+              :hide-delimiters="false"
               class="rounded-xl mb-4"
             >
               <!-- --- Real-Time Tracking --- -->

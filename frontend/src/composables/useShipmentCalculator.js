@@ -42,6 +42,7 @@ export function useShipmentCalculator() {
     let pricePerKm = settings.pricePerKm ?? 30;
     let volumetricDivisor = settings.volumetricDivisor ?? 5000;
     let minimumPrice = settings.minimumPrice ?? 1500;
+    let insuranceFee = settings.insuranceFee ?? 500;
     let distanceKm = 0
     let cost = 0;
     distanceKm = await getDistanceKm(senderAddress, receiverAddress);
@@ -52,9 +53,7 @@ export function useShipmentCalculator() {
 
     cost = basePrice +
       (chargeableWeight * pricePerKg) +
-      (distanceKm * pricePerKm);
-
-    console.log("Calculated Cost before minimum check: ", cost);
+      (distanceKm * pricePerKm) + (withInsurance ? insuranceFee : 0);
 
     if (cost < minimumPrice) cost = minimumPrice;
 

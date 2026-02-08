@@ -14,20 +14,6 @@ import LoginView from '@/views/auth/LoginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import VerifyAccountView from '@/views/auth/VerifyAccountView.vue'
 
-// Shipment Views
-import ShipmentDetailsView from '@/views/shipment/ShipmentDetailsView.vue'
-
-// Staff Views
-import StaffDashboardView from '@/views/staff/StaffDashboardView.vue'
-import StaffPickupRequestsView from '@/views/staff/StaffShipmentsView.vue'
-import StaffUpdateShipmentStatusView from '@/views/staff/StaffUpdateShipmentStatusView.vue'
-
-// Admin Views
-import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
-import AdminUsersView from '@/views/admin/AdminUsersView.vue'
-import AdminCreateStaffView from '@/views/admin/AdminCreateStaffView.vue'
-import AdminStaffActivityLogsView from '@/views/admin/AdminStaffActivityLogsView.vue'
-
 const router = createRouter({
   history: createWebHistory(),
   routes: [
