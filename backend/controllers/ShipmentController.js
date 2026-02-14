@@ -3,7 +3,7 @@
 import Shipment from "../models/Shipment.js";
 import TrackingEvent from "../models/TrackingEvent.js";
 import User from "../models/User.js";
-import { emailQueue } from "../queues/emailQueue.js";
+// import { emailQueue } from "../queues/emailQueue.js";
 import { generateTrackingNumber } from "../utils/generateTrackingNumber.js";
 import sendEmail from '../utils/sendEmail.js';
 
