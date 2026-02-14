@@ -2,7 +2,7 @@ import express from "express";
 import {
   getPricingSettings,
   updatePricingSettings
-} from "../controllers/pricingController.js";
+} from "../controllers/PricingController.js";
 import {adminOnly} from "../middleware/roleMiddleware.js"
 
 
