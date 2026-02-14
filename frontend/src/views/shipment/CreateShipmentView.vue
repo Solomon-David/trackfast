@@ -232,27 +232,27 @@ const dialogLoader = ref(false);
 // Form fields
 const senderName = ref(userStore?.user?.fullName || "");
 const senderEmail = ref(userStore?.user?.email || "");
-const senderAddress = ref("Ikpayongo");
-const receiverName = ref("Elizabeth");
-const receiverEmail = ref("sakesobia@gmail.com");
-const receiverAddress = ref("Woji");
-const senderCity = ref("Makurdi");
-const receiverCity = ref("Port Harcourt");
-const senderCountry = ref("Nigeria");
-const receiverCountry = ref("Nigeria");
+const senderAddress = ref("");
+const receiverName = ref("");
+const receiverEmail = ref("");
+const receiverAddress = ref("");
+const senderCity = ref("");
+const receiverCity = ref("");
+const senderCountry = ref("");
+const receiverCountry = ref("");
 const sameCity = ref(false);
 
 const senderLocation = ref("");
 const receiverLocation = ref("");
 
-const length = ref(20);
-const width = ref(30);
-const height = ref(10);
-const weight = ref(5);
+const length = ref();
+const width = ref();
+const height = ref();
+const weight = ref();
 const confirmPrice = ref(false);
 const cost = ref(0);
 
-const packageDescription = ref("Food");
+const packageDescription = ref("");
 const insuranceSelected = ref(true);
 
 const sendStatus = ref("");

@@ -30,6 +30,25 @@ export const createShipment = async (req, res) => {
     const user = await User.findById(req.user.id);
     const userEmail = user?.email;
 
+    // Send confirmation email to sender
+    if (userEmail) {
+      await sendEmail({
+        to: userEmail,
+        subject: `Shipment Ready #${trackingNumber}`,
+        text: `Your shipment is ready for delivery. Tracking number: ${trackingNumber}
+               Visit ${process.env.FRONTEND_URL || "Trackfast"} for more details.`
+      });
+    }
+
+    // Send notification email to receiver
+    if (req.body.receiver?.email) {
+      await sendEmail({
+        to: req.body.receiver.email,
+        subject: `Package on the Way #${trackingNumber}`,
+        text: `A package is being sent to you by ${req.body.sender.name}.
+               Tracking number: ${trackingNumber}. Visit ${process.env.FRONTEND_URL | "Trackfast"} for more details.`
+      });
+    }
     
     return res.json({ message: "Shipment created", shipment });
   } catch (err) {
