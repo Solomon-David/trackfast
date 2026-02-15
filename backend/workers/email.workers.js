@@ -3,7 +3,7 @@ import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import { sendEmail } from "../utils/sendEmail.js";
 
-const connection = new IORedis(process.env.REDIS_HOST, process.env.REDIS_PORT);
+const connection = new IORedis(process.env.REDIS_HOST);
 
 const worker = new Worker(
   "emailQueue",
