@@ -3,11 +3,7 @@ import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import { sendEmail } from "../utils/sendEmail.js";
 
-const connection = new IORedis({
-  host: process.env.REDIS_HOST || "127.0.0.1",
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-});
+const connection = new IORedis(process.env.REDIS_HOST, process.env.REDIS_PORT);
 
 const worker = new Worker(
   "emailQueue",
@@ -16,7 +12,7 @@ const worker = new Worker(
     await sendEmail({ to, subject, text, html });
   },
   { connection }
-);
+); 
 
 worker.on("completed", (job) => {
   console.log(`Email job ${job.id} completed`);
