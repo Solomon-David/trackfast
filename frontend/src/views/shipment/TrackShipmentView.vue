@@ -6,7 +6,7 @@ import { useRoute } from "vue-router";
 const trackingNumber = ref("");
 onMounted(() => {
   trackingNumber.value = useRoute().params.trackingNumber;
-  searchTracking();
+  searchTracking(); 
 });
 
 const trackingStore = useTrackingStore();

@@ -163,23 +163,29 @@
           <p>Please review the shipping cost below:</p>
           <v-divider class="my-2" />
           <div class="mb-1">
-            <p class="mt-2"><b>Same region delivery fee:</b> ${{ base }}</p>
             <p class="mt-2">
-              <b>Product Dimensions:</b> ({{ length }}cm x {{ width }}cm x {{ height }}cm)
-              = ${{ (length * width * height) / pricing.volumetricDivisor }}
+              <b>Same region delivery fee:</b> {{ useFormatCurrency(base) }}
             </p>
             <p class="mt-2">
-              <b>Weight:</b> {{ weight }}kg = ${{ weight * pricing.pricePerKg }}
+              <b>Product Dimensions:</b> ({{ length }}cm x {{ width }}cm x {{ height }}cm)
+              =
+              {{
+                useFormatCurrency((length * width * height) / pricing.volumetricDivisor)
+              }}
+            </p>
+            <p class="mt-2">
+              <b>Weight:</b> {{ weight }}kg =
+              {{ useFormatCurrency(weight * pricing.pricePerKg) }}
             </p>
             <p class="mt-2">
               <b>Add package insurance?</b> {{ insuranceSelected ? "yes" : "no" }}.
             </p>
             <p class="mt-2" v-if="insuranceSelected">
-              <b>Insurance fee</b>: ${{ pricing.insuranceFee }}
+              <b>Insurance fee</b>: {{ useFormatCurrency(pricing.insuranceFee) }}
             </p>
           </div>
           <v-divider class="my-2" />
-          <h1 class="text-h5 font-weight-bold mb-4">${{ cost }}</h1>
+          <h1 class="text-h5 font-weight-bold mb-4">{{ useFormatCurrency(cost) }}</h1>
 
           <v-btn
             block
@@ -193,7 +199,12 @@
         </v-card>
       </v-dialog>
 
-      <v-btn color="primary" class="mt-4 mb-4" @click="openPriceConfirmation">
+      <v-btn
+        color="primary"
+        class="mt-4 mb-4"
+        @click="openPriceConfirmation"
+        :loading="loading"
+      >
         Get Cost
       </v-btn>
       <v-alert v-if="sendStatus == 'success'" type="success">
@@ -218,6 +229,7 @@ import { useUserStore } from "@/stores/userStore";
 import { usePricingSettingsStore } from "@/stores/pricingSettingsStore";
 import { getAddress } from "@/utils/radarInstance.js";
 import rules from "@/utils/formRules.js";
+import { useFormatCurrency } from "@/composables/formatCurrency.js";
 
 const calculateCost = useShipmentCalculator().calculateCost;
 const shipmentStore = useShipmentStore();
