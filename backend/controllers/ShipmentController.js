@@ -57,9 +57,9 @@ export const createShipment = async (req, res) => {
         status: "pending",
         location: shipment.currentLocation,
         description: "Shipment created and awaiting pickup."
-
-      res.json({ message: "Shipment created", shipment });
       });
+      
+      res.json({ message: "Shipment created", shipment });
 
   } catch (err) {
     console.error(err);
