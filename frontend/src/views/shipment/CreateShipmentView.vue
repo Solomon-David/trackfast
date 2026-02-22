@@ -101,6 +101,7 @@
             v-model="receiverCountry"
             label="Receiver's Country"
             required
+            :disabled="sameCity"
             @update:focused="
               () => {
                 receiverCountryLoading = false;
@@ -185,7 +186,9 @@
             </p>
           </div>
           <v-divider class="my-2" />
-          <h1 class="text-h5 font-weight-bold mb-4">{{ useFormatCurrency(cost) }}</h1>
+          <h1 class="text-h5 font-weight-bold mb-4">
+            Cost: {{ useFormatCurrency(cost) }}
+          </h1>
 
           <v-btn
             block
@@ -345,12 +348,6 @@ watch(dialogLoader, async (newVal) => {
   }
 });
 
-watch(sameCity, () => {
-  base.value = sameCity.value
-    ? (pricing.value.basePrice / 3).toFixed(2)
-    : pricing.value.basePrice;
-});
-
 // Submit shipment
 async function submitShipment() {
   shipmentLoading.value = true;
@@ -435,6 +432,8 @@ function clearInput() {
 //watchers
 watch(sameCity, () => {
   receiverCity.value = sameCity.value ? senderCity.value : receiverCity.value;
+  receiverCountry.value = sameCity.value ? senderCountry.value : receiverCountry.value;
+  receiverLocation.value = sameCity.value ? senderLocation.value : receiverLocation.value;
 });
 
 onMounted(async () => {

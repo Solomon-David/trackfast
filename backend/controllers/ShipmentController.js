@@ -54,6 +54,7 @@ export const createShipment = async (req, res) => {
      //create tracking event 
       await TrackingEvent.create({
         shipment: shipment._id,
+        trackingNumber: shipment.trackingNumber,
         status: "pending",
         location: shipment.currentLocation,
         description: "Shipment created and awaiting pickup."

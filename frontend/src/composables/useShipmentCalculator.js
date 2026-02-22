@@ -12,7 +12,8 @@ export function useShipmentCalculator() {
     if (!(senderAddress && receiverAddress)) return 0;
 
     if (senderAddress === receiverAddress) {
-      return "Yes"; // same city
+      return 10;
+       // same city
     }
     // TODO: Replace with Distance.to API
     let distanceKm = await estimateDistance({
