@@ -50,17 +50,17 @@ export const createShipment = async (req, res) => {
       });
     }
     
-     res.json({ message: "Shipment created", shipment });
-
+    
      //create tracking event 
       await TrackingEvent.create({
         shipment: shipment._id,
         status: "pending",
         location: shipment.currentLocation,
         description: "Shipment created and awaiting pickup."
+
+      return res.json({ message: "Shipment created", shipment });
       });
 
-      return;
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
